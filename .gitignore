@@ -1,0 +1,17 @@
+target/
+.idea/
+*.iml
+*.swp
+*.js.map
+*.patch
+.metadata/
+*.ipr
+.settings
+.project
+.classpath
+*node_modules/
+*.log
+*.tmp/
+*.DS_Store
+nb-configuration.xml
+*~
