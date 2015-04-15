@@ -59,4 +59,27 @@
     <url>https://travis-ci.org/tsegismont/vertx-monitor</url>
   </ciManagement>
 
+  <properties>
+    <vertx-dependencies.version>3.0.0-milestone4</vertx-dependencies.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-dependencies</artifactId>
+        <version>${vertx-dependencies.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+    </dependency>
+  </dependencies>
+
 </project>
