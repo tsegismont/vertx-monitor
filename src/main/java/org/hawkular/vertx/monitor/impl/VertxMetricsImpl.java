@@ -24,28 +24,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.datagram.DatagramSocket;
-import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.metrics.impl.DummyVertxMetrics;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.metrics.DatagramSocketMetrics;
-import io.vertx.core.spi.metrics.EventBusMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
 
 import org.hawkular.metrics.client.common.Batcher;
 import org.hawkular.metrics.client.common.SingleMetric;
@@ -54,7 +42,7 @@ import org.hawkular.vertx.monitor.VertxMonitorOptions;
 /**
  * @author Thomas Segismont
  */
-public class VertxMetricsImpl implements VertxMetrics {
+public class VertxMetricsImpl extends DummyVertxMetrics {
     private final String metricsURI;
     private final String prefix;
 
@@ -104,52 +92,11 @@ public class VertxMetricsImpl implements VertxMetrics {
     }
 
     @Override
-    public void verticleDeployed(Verticle verticle) {
-    }
-
-    @Override
-    public void verticleUndeployed(Verticle verticle) {
-    }
-
-    @Override
-    public void timerCreated(long id) {
-    }
-
-    @Override
-    public void timerEnded(long id, boolean cancelled) {
-    }
-
-    @Override
-    public EventBusMetrics<Void> createMetrics(EventBus eventBus) {
-        return new EventBusMetricsImpl();
-    }
-
-    @Override
     public HttpServerMetrics<Long, Void, Void> createMetrics(HttpServer server, SocketAddress localAddress,
         HttpServerOptions options) {
         HttpServerMetricsImpl httpServerMetrics = new HttpServerMetricsImpl(localAddress);
         httpServerMetricsList.add(httpServerMetrics);
         return httpServerMetrics;
-    }
-
-    @Override
-    public HttpClientMetrics<Void, Void, Void> createMetrics(HttpClient client, HttpClientOptions options) {
-        return new HttpClientMetricsImpl();
-    }
-
-    @Override
-    public TCPMetrics<Void> createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
-        return new NetServerMetricsImpl();
-    }
-
-    @Override
-    public TCPMetrics<?> createMetrics(NetClient client, NetClientOptions options) {
-        return new NetClientMetricsImpl();
-    }
-
-    @Override
-    public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
-        return new DatagramSocketMetricsImpl();
     }
 
     @Override
