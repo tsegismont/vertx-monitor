@@ -19,17 +19,19 @@ package org.hawkular.vertx.monitor.impl;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.NetClient;
@@ -44,27 +46,58 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
+import org.hawkular.metrics.client.common.Batcher;
+import org.hawkular.metrics.client.common.SingleMetric;
 import org.hawkular.vertx.monitor.VertxMonitorOptions;
 
 /**
  * @author Thomas Segismont
  */
 public class VertxMetricsImpl implements VertxMetrics {
-    private final Vertx vertx;
-    private final VertxMonitorOptions vertxMonitorOptions;
+    private final String metricsURI;
 
-    List<HttpServerMetrics> httpServerMetricsList = new CopyOnWriteArrayList<>();
+    private HttpClient httpClient;
+
+    List<HttpServerMetricsImpl> httpServerMetricsList = new CopyOnWriteArrayList<>();
 
     public VertxMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions) {
-        this.vertx = vertx;
-        this.vertxMonitorOptions = vertxMonitorOptions;
         vertx.runOnContext((Void) -> {
+            HttpClientOptions httpClientOptions = new HttpClientOptions().setDefaultHost(vertxMonitorOptions.getHost())
+                .setDefaultPort(vertxMonitorOptions.getPort()).setKeepAlive(true).setTryUseCompression(true);
+            httpClient = vertx.createHttpClient(httpClientOptions);
             vertx.setPeriodic(MILLISECONDS.convert(vertxMonitorOptions.getSchedule(), SECONDS), this::collect);
         });
+        metricsURI = "/hawkular-metrics/" + vertxMonitorOptions.getTenant() + "/metrics/numeric/data";
     }
 
     private void collect(Long timerId) {
-        httpServerMetricsList.forEach(m -> System.out.println(new Date() + " " + Thread.currentThread() + " " + m));
+        long timestamp = System.currentTimeMillis();
+        List<SingleMetric> metrics = new ArrayList<>();
+        for (HttpServerMetricsImpl httpServerMetrics : httpServerMetricsList) {
+            String name = "vertx.http.server.bytesReceived";
+            double value = (double) httpServerMetrics.getBytesReceived();
+            metrics.add(new SingleMetric(name, timestamp, value));
+            name = "vertx.http.server.bytesSent";
+            value = (double) httpServerMetrics.getBytesSent();
+            metrics.add(new SingleMetric(name, timestamp, value));
+        }
+        Buffer buffer = Buffer.buffer(Batcher.metricListToJson(metrics));
+        HttpClientRequest req = httpClient.post(metricsURI, response -> {
+            if (response.statusCode() != 200) {
+                System.out.println("response " + response.statusCode());
+                response.bodyHandler(msg -> {
+                    System.out.println(msg.toString());
+                });
+            }
+        });
+        req.putHeader("Content-Length", "" + buffer.length());
+        req.putHeader("Content-Type", "application/json");
+        req.exceptionHandler(err -> {
+            System.out.println("Could not send metrics");
+            err.printStackTrace();
+        });
+        req.write(buffer);
+        req.end();
     }
 
     @Override
@@ -128,5 +161,6 @@ public class VertxMetricsImpl implements VertxMetrics {
 
     @Override
     public void close() {
+        httpClient.close();
     }
 }
