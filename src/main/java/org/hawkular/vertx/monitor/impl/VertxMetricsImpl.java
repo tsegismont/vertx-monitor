@@ -56,6 +56,7 @@ import org.hawkular.vertx.monitor.VertxMonitorOptions;
  */
 public class VertxMetricsImpl implements VertxMetrics {
     private final String metricsURI;
+    private final String prefix;
 
     private HttpClient httpClient;
 
@@ -69,6 +70,7 @@ public class VertxMetricsImpl implements VertxMetrics {
             vertx.setPeriodic(MILLISECONDS.convert(vertxMonitorOptions.getSchedule(), SECONDS), this::collect);
         });
         metricsURI = "/hawkular-metrics/" + vertxMonitorOptions.getTenant() + "/metrics/numeric/data";
+        prefix = vertxMonitorOptions.getPrefix();
     }
 
     private void collect(Long timerId) {
@@ -77,7 +79,7 @@ public class VertxMetricsImpl implements VertxMetrics {
         for (HttpServerMetricsImpl httpServerMetrics : httpServerMetricsList) {
             Map<String, Number> runtimeInfo = httpServerMetrics.getRuntimeInfo();
             for (Map.Entry<String, Number> entry : runtimeInfo.entrySet()) {
-                String name = "vertx.http.server." + httpServerMetrics.getServerId() + "." + entry.getKey();
+                String name = prefix + "vertx.http.server." + httpServerMetrics.getServerId() + "." + entry.getKey();
                 double value = entry.getValue().doubleValue();
                 metrics.add(new SingleMetric(name, timestamp, value));
             }

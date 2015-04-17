@@ -27,17 +27,20 @@ public class VertxMonitorOptions extends MetricsOptions {
     public static final int DEFAULT_PORT = 8080;
     public static final String DEFAULT_TENANT = "default";
     public static final int DEFAULT_SCHEDULE = 1;
+    public static final String DEFAULT_PREFIX = "";
 
     private String host;
     private int port;
     private String tenant;
     private int schedule;
+    private String prefix;
 
     public VertxMonitorOptions() {
         host = DEFAULT_HOST;
         port = DEFAULT_PORT;
         tenant = DEFAULT_TENANT;
         schedule = DEFAULT_SCHEDULE;
+        prefix = DEFAULT_PREFIX;
     }
 
     public VertxMonitorOptions(VertxMonitorOptions other) {
@@ -46,6 +49,7 @@ public class VertxMonitorOptions extends MetricsOptions {
         port = other.port;
         tenant = other.tenant;
         schedule = other.schedule;
+        prefix = other.prefix;
     }
 
     public VertxMonitorOptions(JsonObject json) {
@@ -54,6 +58,7 @@ public class VertxMonitorOptions extends MetricsOptions {
         port = json.getInteger("port", DEFAULT_PORT);
         tenant = json.getString("tenant", DEFAULT_TENANT);
         schedule = json.getInteger("schedule", DEFAULT_SCHEDULE);
+        prefix = json.getString("prefix", DEFAULT_PREFIX);
     }
 
     public String getHost() {
@@ -92,9 +97,12 @@ public class VertxMonitorOptions extends MetricsOptions {
         return this;
     }
 
-    @Override
-    public String toString() {
-        return "VertxMonitorOptions[" + "host='" + host + '\'' + ", port=" + port + ", tenant='" + tenant + '\''
-            + ", schedule=" + schedule + ']';
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public VertxMonitorOptions setPrefix(String prefix) {
+        this.prefix = prefix == null ? DEFAULT_PREFIX : prefix;
+        return this;
     }
 }
