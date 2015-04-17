@@ -49,7 +49,7 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
     private final AtomicLong errorCount = new AtomicLong(0);
 
     public HttpServerMetricsImpl(SocketAddress localAddress) {
-        serverId = localAddress.host() + "@" + localAddress.port();
+        serverId = localAddress.host() + ":" + localAddress.port();
     }
 
     @Override
