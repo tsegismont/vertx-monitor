@@ -21,6 +21,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import io.vertx.core.Verticle;
@@ -74,12 +75,12 @@ public class VertxMetricsImpl implements VertxMetrics {
         long timestamp = System.currentTimeMillis();
         List<SingleMetric> metrics = new ArrayList<>();
         for (HttpServerMetricsImpl httpServerMetrics : httpServerMetricsList) {
-            String name = "vertx.http.server.bytesReceived";
-            double value = (double) httpServerMetrics.getBytesReceived();
-            metrics.add(new SingleMetric(name, timestamp, value));
-            name = "vertx.http.server.bytesSent";
-            value = (double) httpServerMetrics.getBytesSent();
-            metrics.add(new SingleMetric(name, timestamp, value));
+            Map<String, Number> runtimeInfo = httpServerMetrics.getRuntimeInfo();
+            for (Map.Entry<String, Number> entry : runtimeInfo.entrySet()) {
+                String name = "vertx.http.server." + httpServerMetrics.getServerId() + "." + entry.getKey();
+                double value = entry.getValue().doubleValue();
+                metrics.add(new SingleMetric(name, timestamp, value));
+            }
         }
         Buffer buffer = Buffer.buffer(Batcher.metricListToJson(metrics));
         HttpClientRequest req = httpClient.post(metricsURI, response -> {

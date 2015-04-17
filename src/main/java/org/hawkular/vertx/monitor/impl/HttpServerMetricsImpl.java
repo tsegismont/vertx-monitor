@@ -19,6 +19,8 @@ package org.hawkular.vertx.monitor.impl;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.vertx.core.http.HttpServerRequest;
@@ -144,6 +146,19 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
 
     public long getErrorCount() {
         return errorCount.get();
+    }
+
+    public Map<String, Number> getRuntimeInfo() {
+        Map<String, Number> info = new HashMap<>();
+        info.put("processingTime", getProcessingTime());
+        info.put("requestCount", getRequestCount());
+        info.put("requests", getRequests());
+        info.put("httpConnections", getHttpConnections());
+        info.put("wsConnections", getWsConnections());
+        info.put("bytesReceived", getBytesReceived());
+        info.put("bytesSent", getBytesSent());
+        info.put("errorCount", getErrorCount());
+        return info;
     }
 
     @Override
