@@ -28,8 +28,12 @@ import org.hawkular.vertx.monitor.VertxMonitorOptions;
 public class HttpServerExample {
 
     public static void main(String[] args) {
-        VertxMonitorOptions vertxMonitorOptions = new VertxMonitorOptions();
-        vertxMonitorOptions.setPrefix("instance1");
+        VertxMonitorOptions vertxMonitorOptions = new VertxMonitorOptions()
+                .setHost("localhost")
+                .setPort(8080)
+                .setTenant("default")
+                .setPrefix("instance1")
+                .setSchedule(3);
         vertxMonitorOptions.setEnabled(true);
 
         VertxOptions vertxOptions = new VertxOptions();
