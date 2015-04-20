@@ -85,7 +85,7 @@ TBD
 == Contributing
 
 Want to contribute? Great! Checkout the https://github.com/tsegismont/vertx-monitor/blob/master/TODO.md[TODO list] and
-join us on Freenode: irc://irc.freenode.net/#hawkular.
+join us in `#hawkular` on Freenode.
 
 == License
 
