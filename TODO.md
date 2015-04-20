@@ -1,4 +1,5 @@
 * Implement event bus metrics (+ example)
+* Implement datagram sockets metrics (+ example)
 * Minimal documentation (+ check Javadoc: indicate the type of metrics)
 * Integration tests
 * Decouple collection from sending (still create timers for collection but put collected metrics into a queue)
