@@ -25,10 +25,10 @@ public abstract class ScheduledMetrics implements Metrics {
     private final String metricsURI;
     private final long timerId;
 
-    public ScheduledMetrics(Vertx vertx, HttpClient httpClient, String metricsURI) {
+    public ScheduledMetrics(Vertx vertx, HttpClient httpClient, String tenantId) {
         this.vertx = vertx;
         this.httpClient = httpClient;
-        this.metricsURI = metricsURI;
+        metricsURI = "/hawkular-metrics/" + tenantId + "/metrics/numeric/data";
         timerId = vertx.setPeriodic(1000, this::collectAndSend);
     }
 

@@ -58,7 +58,7 @@ public class HttpServerMetricsImpl extends ScheduledMetrics implements HttpServe
 
     public HttpServerMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions, SocketAddress localAddress,
         HttpClient httpClient) {
-        super(vertx, httpClient, "/hawkular-metrics/" + vertxMonitorOptions.getTenant() + "/metrics/numeric/data");
+        super(vertx, httpClient, vertxMonitorOptions.getTenant());
         prefix = vertxMonitorOptions.getPrefix();
         serverId = localAddress.host() + ":" + localAddress.port();
     }
