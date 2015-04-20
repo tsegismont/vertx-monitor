@@ -1,4 +1,5 @@
 * Implementent other server metrics and event bus metrics
 * Minimal documentation
+* Integration tests
 * Decouple collection from sending (still create timers for collection but put collected metrics into a queue)
 * Do not drop data on sending error
