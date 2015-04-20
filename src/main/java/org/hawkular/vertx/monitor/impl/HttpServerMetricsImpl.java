@@ -60,7 +60,7 @@ public class HttpServerMetricsImpl extends ScheduledMetrics implements HttpServe
         super(vertx, httpClient, vertxMonitorOptions.getTenant());
         String serverId = localAddress.host() + ":" + localAddress.port();
         String prefix = vertxMonitorOptions.getPrefix();
-        baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.net.server." + serverId;
+        baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.http.server." + serverId;
     }
 
     @Override
