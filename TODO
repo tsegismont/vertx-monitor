@@ -1,5 +1,7 @@
-* Implementent other server metrics and event bus metrics
+* Implement net server metrics (+ example)
+* Implement event bus metrics (+ example)
 * Minimal documentation
 * Integration tests
 * Decouple collection from sending (still create timers for collection but put collected metrics into a queue)
 * Do not drop data on sending error
+* Make list of servers (http and net) monitored configurable
