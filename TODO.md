@@ -5,3 +5,4 @@
 * Do not drop data on sending error
 * Make list of servers (http and net) monitored configurable
 * Support HTTPS (with configurable trust and key stores)
+* How to support different versions of Vert.x 3?
