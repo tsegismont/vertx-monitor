@@ -22,8 +22,11 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
 
 import org.hawkular.vertx.monitor.VertxMonitorOptions;
 
@@ -56,6 +59,11 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
     public HttpServerMetrics<Long, Void, Void> createMetrics(HttpServer server, SocketAddress localAddress,
         HttpServerOptions options) {
         return new HttpServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, httpClient);
+    }
+
+    @Override
+    public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
+        return new NetServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, httpClient);
     }
 
     @Override
