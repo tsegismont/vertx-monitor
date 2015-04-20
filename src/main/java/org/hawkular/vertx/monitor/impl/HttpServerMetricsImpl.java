@@ -39,8 +39,7 @@ import org.hawkular.vertx.monitor.VertxMonitorOptions;
  * @author Thomas Segismont
  */
 public class HttpServerMetricsImpl extends ScheduledMetrics implements HttpServerMetrics<Long, Void, Void> {
-    private final String prefix;
-    private final String serverId;
+    private final String baseName;
 
     // Request info
     private final AtomicLong processingTime = new AtomicLong(0);
@@ -59,8 +58,9 @@ public class HttpServerMetricsImpl extends ScheduledMetrics implements HttpServe
     public HttpServerMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions, SocketAddress localAddress,
         HttpClient httpClient) {
         super(vertx, httpClient, vertxMonitorOptions.getTenant());
-        prefix = vertxMonitorOptions.getPrefix();
-        serverId = localAddress.host() + ":" + localAddress.port();
+        String serverId = localAddress.host() + ":" + localAddress.port();
+        String prefix = vertxMonitorOptions.getPrefix();
+        baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.net.server." + serverId;
     }
 
     @Override
@@ -128,7 +128,6 @@ public class HttpServerMetricsImpl extends ScheduledMetrics implements HttpServe
     }
 
     private SingleMetric buildMetric(String name, long timestamp, Number value, MetricType type) {
-        return new SingleMetric(prefix + ".vertx.http.server." + serverId + "." + name, timestamp, value.doubleValue(),
-            type);
+        return new SingleMetric(baseName + "." + name, timestamp, value.doubleValue(), type);
     }
 }
