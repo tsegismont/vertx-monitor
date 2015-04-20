@@ -80,7 +80,13 @@ by default
 
 == Limitations
 
-TBD
+Currently only net server and http server metrics are recorded. Datagram sockets and event bus metrics are planned.
+
+Also, it's not yet possible to select the servers to be monitored, any http or net server created will have its metrics
+recorded (if the Vert.x Metrics SPI is enabled, of course).
+
+The collection interval is a global setting. In the future, it should be possible to assign a schedule for all metrics
+of a resource (net server, http server, event bus), or for a single metric.
 
 == Contributing
 
