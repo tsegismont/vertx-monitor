@@ -1,0 +1,92 @@
+= vertx-monitor
+:source-language: java
+
+= About
+
+Hawkular is an http://www.hawkular.org[open source monitoring and management solution].
+
+The http://vert-x3.github.io/docs/vertx-core/java/index.html#_metrics_spi[Vert.x Metrics SPI] allows implementers to
+capture events from Vert.x in order to gather metrics.
+
+This project is an Hawkular implementation of the Vert.x Metrics SPI: metrics built from Vert.x events will be sent to
+an Hawkular Metrics server.
+
+== Quickstart
+
+First of all, you need an https://github.com/hawkular/hawkular-metrics[Hawkular Metrics server]. Follow the instructions
+on the project README or on http://www.hawkular.org/docs/user/getting-started.html[Hawkular's website].
+
+Then clone this project and build it:
+[source, bash]
+----
+git clone https://github.com/tsegismont/vertx-monitor.git
+cd vertx-monitor
+mvn clean install
+----
+
+Once the project is built, add the dependency to your Vert.x 3 project. For Maven based projects:
+[source, xml]
+----
+<parent>
+ <groupId>org.hawkular</groupId>
+ <artifactId>vertx-monitor</artifactId>
+ <version>0.0.1-SNAPSHOT</version>
+</parent>
+----
+
+Then, you must enable Vert.x Metrics:
+[source, java]
+----
+VertxMonitorOptions vertxMonitorOptions = new VertxMonitorOptions();
+vertxMonitorOptions.setEnabled(true); // By default Vert.x Metrics is disabled
+
+VertxOptions vertxOptions = new VertxOptions();
+vertxOptions.setMetricsOptions(vertxMonitorOptions);
+
+Vertx vertx = Vertx.vertx(vertxOptions);
+----
+
+https://github.com/tsegismont/vertx-monitor/tree/master/src/main/java/org/hawkular/vertx/monitor/examples[Full samples]
+can be found in the `org.hawkular.vertx.monitor.examples` package.
+
+== Configuration
+
+Here's how to configure Vert.x Monitor
+[source, java]
+----
+VertxMonitorOptions vertxMonitorOptions = new VertxMonitorOptions() // <1>
+        .setHost("localhost") // <2>
+        .setPort(8080) // <3>
+        .setTenant("default") // <4>
+        .setPrefix("instance1") // <5>
+        .setSchedule(3); // <6>
+vertxMonitorOptions.setEnabled(true); // <7>
+
+VertxOptions vertxOptions = new VertxOptions()
+        .setMetricsOptions(vertxMonitorOptions); // <8>
+
+Vertx vertx = Vertx.vertx(vertxOptions); // <9>
+----
+<1> `org.hawkular.vertx.monitor.VertxMonitorOptions` extends `io.vertx.core.metrics.MetricsOptions`
+<2> Host of the Hawkular Metrics server, defaults to `localhost`
+<3> Port of the Hawkular Metrics server, defaults to `8080`
+<4> The Hawkular Metrics `tenant` (Hawkular Metrics standalone servers will accept any value), defaults to `default`
+<5> Metrics prefix used to build series name (for example `instance1.vertx.http.server.0.0.0.0:8080.bytesSent`), empty
+by default
+<6> How often (in seconds) metrics will be collected and sent to the Hawkular Metrics server, defaults to `1`
+<7> The *Vert.x Metrics SPI is disabled by default*, so make sure to enable it
+<8> Add your `org.hawkular.vertx.monitor.VertxMonitorOptions` to the `io.vertx.core.VertxOptions`
+<9> Create the Vert.x instance
+
+== Limitations
+
+TBD
+
+== Contributing
+
+Want to contribute? Great! Checkout the https://github.com/tsegismont/vertx-monitor/blob/master/TODO.md[TODO list] and
+join us on irc://irc.freenode.net/#hawkular[Freenode].
+
+== License
+
+Apache License, version 2.0
