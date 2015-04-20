@@ -29,7 +29,7 @@ public class HttpServerExample {
 
     public static void main(String[] args) {
         VertxMonitorOptions vertxMonitorOptions = new VertxMonitorOptions();
-        vertxMonitorOptions.setPrefix("instance1.");
+        vertxMonitorOptions.setPrefix("instance1");
         vertxMonitorOptions.setEnabled(true);
 
         VertxOptions vertxOptions = new VertxOptions();

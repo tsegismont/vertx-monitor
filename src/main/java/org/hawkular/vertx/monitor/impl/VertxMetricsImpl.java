@@ -16,87 +16,46 @@
  */
 package org.hawkular.vertx.monitor.impl;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
-import org.hawkular.metrics.client.common.Batcher;
-import org.hawkular.metrics.client.common.SingleMetric;
 import org.hawkular.vertx.monitor.VertxMonitorOptions;
 
 /**
  * @author Thomas Segismont
  */
 public class VertxMetricsImpl extends DummyVertxMetrics {
-    private final String metricsURI;
-    private final String prefix;
+    private final Vertx vertx;
+    private final VertxMonitorOptions vertxMonitorOptions;
+    private final String host;
+    private final int port;
 
     private HttpClient httpClient;
 
-    List<HttpServerMetricsImpl> httpServerMetricsList = new CopyOnWriteArrayList<>();
-
     public VertxMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions) {
-        vertx.runOnContext((Void) -> {
-            HttpClientOptions httpClientOptions = new HttpClientOptions().setDefaultHost(vertxMonitorOptions.getHost())
-                .setDefaultPort(vertxMonitorOptions.getPort()).setKeepAlive(true).setTryUseCompression(true);
-            httpClient = vertx.createHttpClient(httpClientOptions);
-            vertx.setPeriodic(MILLISECONDS.convert(vertxMonitorOptions.getSchedule(), SECONDS), this::collect);
-        });
-        metricsURI = "/hawkular-metrics/" + vertxMonitorOptions.getTenant() + "/metrics/numeric/data";
-        prefix = vertxMonitorOptions.getPrefix();
+        this.vertx = vertx;
+        this.vertxMonitorOptions = vertxMonitorOptions;
+        host = vertxMonitorOptions.getHost();
+        port = vertxMonitorOptions.getPort();
+        vertx.runOnContext(this::init);
     }
 
-    private void collect(Long timerId) {
-        long timestamp = System.currentTimeMillis();
-        List<SingleMetric> metrics = new ArrayList<>();
-        for (HttpServerMetricsImpl httpServerMetrics : httpServerMetricsList) {
-            Map<String, Number> runtimeInfo = httpServerMetrics.getRuntimeInfo();
-            for (Map.Entry<String, Number> entry : runtimeInfo.entrySet()) {
-                String name = prefix + "vertx.http.server." + httpServerMetrics.getServerId() + "." + entry.getKey();
-                double value = entry.getValue().doubleValue();
-                metrics.add(new SingleMetric(name, timestamp, value));
-            }
-        }
-        Buffer buffer = Buffer.buffer(Batcher.metricListToJson(metrics));
-        HttpClientRequest req = httpClient.post(metricsURI, response -> {
-            if (response.statusCode() != 200) {
-                System.out.println("response " + response.statusCode());
-                response.bodyHandler(msg -> {
-                    System.out.println(msg.toString());
-                });
-            }
-        });
-        req.putHeader("Content-Length", "" + buffer.length());
-        req.putHeader("Content-Type", "application/json");
-        req.exceptionHandler(err -> {
-            System.out.println("Could not send metrics");
-            err.printStackTrace();
-        });
-        req.write(buffer);
-        req.end();
+    private void init(Void aVoid) {
+        HttpClientOptions httpClientOptions = new HttpClientOptions().setDefaultHost(host).setDefaultPort(port)
+            .setKeepAlive(true).setTryUseCompression(true);
+        httpClient = vertx.createHttpClient(httpClientOptions);
     }
 
     @Override
     public HttpServerMetrics<Long, Void, Void> createMetrics(HttpServer server, SocketAddress localAddress,
         HttpServerOptions options) {
-        HttpServerMetricsImpl httpServerMetrics = new HttpServerMetricsImpl(localAddress);
-        httpServerMetricsList.add(httpServerMetrics);
-        return httpServerMetrics;
+        return new HttpServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, httpClient);
     }
 
     @Override
