@@ -17,6 +17,8 @@
 package org.hawkular.vertx.monitor.impl;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.datagram.DatagramSocket;
+import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
@@ -25,6 +27,7 @@ import io.vertx.core.metrics.impl.DummyVertxMetrics;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
@@ -64,6 +67,11 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
     @Override
     public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
         return new NetServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, httpClient);
+    }
+
+    @Override
+    public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
+        return new DatagramSocketMetricsImpl(vertx, vertxMonitorOptions, httpClient);
     }
 
     @Override
