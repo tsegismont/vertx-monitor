@@ -17,6 +17,7 @@
 package org.hawkular.vertx.monitor.impl;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -32,49 +33,56 @@ import org.hawkular.vertx.monitor.VertxMonitorOptions;
 /**
  * @author Thomas Segismont
  */
-public class DatagramSocketMetricsImpl  extends ScheduledMetrics implements DatagramSocketMetrics {
-    private final String baseName;
+public class DatagramSocketMetricsImpl extends ScheduledMetrics implements DatagramSocketMetrics {
+    private final String prefix;
 
     // Bytes info
     private final AtomicLong bytesReceived = new AtomicLong(0);
-    private final AtomicLong bytesSent = new AtomicLong(0);
     // Other
     private final AtomicLong errorCount = new AtomicLong(0);
 
+    private volatile boolean listening;
+    private volatile String baseName;
+
     public DatagramSocketMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions, HttpClient httpClient) {
         super(vertx, httpClient, vertxMonitorOptions.getTenant());
-        String prefix = vertxMonitorOptions.getPrefix();
-        baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.datagram.server";
+        prefix = vertxMonitorOptions.getPrefix();
     }
-
 
     @Override
     public void listening(SocketAddress localAddress) {
+        listening = true;
+        String serverId = localAddress.host() + ":" + localAddress.port();
+        baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.datagram.server." + serverId;
     }
 
     @Override
     public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-        bytesReceived.addAndGet(numberOfBytes);
+        if (listening) {
+            bytesReceived.addAndGet(numberOfBytes);
+        }
     }
 
     @Override
     public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-        bytesSent.addAndGet(numberOfBytes);
     }
 
     @Override
     public void exceptionOccurred(Void socketMetric, SocketAddress remoteAddress, Throwable t) {
-        errorCount.incrementAndGet();
+        if (listening) {
+            errorCount.incrementAndGet();
+        }
     }
 
     @Override
     protected List<SingleMetric> collect() {
+        if (!listening) {
+            // Do not collect if it's not a listening datagram socket
+            return Collections.emptyList();
+        }
         long timestamp = System.currentTimeMillis();
-        return Arrays.asList(
-                buildMetric("bytesReceived", timestamp, bytesReceived.get(), MetricType.COUNTER),
-                buildMetric("bytesSent", timestamp, bytesSent.get(), MetricType.COUNTER),
-                buildMetric("errorCount", timestamp, errorCount.get(), MetricType.COUNTER)
-        );
+        return Arrays.asList(buildMetric("bytesReceived", timestamp, bytesReceived.get(), MetricType.COUNTER),
+            buildMetric("errorCount", timestamp, errorCount.get(), MetricType.COUNTER));
     }
 
     private SingleMetric buildMetric(String name, long timestamp, Number value, MetricType type) {
