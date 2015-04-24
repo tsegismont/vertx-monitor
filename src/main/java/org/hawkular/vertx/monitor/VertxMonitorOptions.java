@@ -28,12 +28,16 @@ public class VertxMonitorOptions extends MetricsOptions {
     public static final String DEFAULT_TENANT = "default";
     public static final int DEFAULT_SCHEDULE = 1;
     public static final String DEFAULT_PREFIX = "";
+    private static final int DEFAULT_QUEUE_SIZE = 10000;
+    private static final int DEFAULT_BATCH_SIZE = 50;
 
     private String host;
     private int port;
     private String tenant;
     private int schedule;
     private String prefix;
+    private int queueSize;
+    private int batchSize;
 
     public VertxMonitorOptions() {
         host = DEFAULT_HOST;
@@ -41,6 +45,8 @@ public class VertxMonitorOptions extends MetricsOptions {
         tenant = DEFAULT_TENANT;
         schedule = DEFAULT_SCHEDULE;
         prefix = DEFAULT_PREFIX;
+        queueSize = DEFAULT_QUEUE_SIZE;
+        batchSize = DEFAULT_BATCH_SIZE;
     }
 
     public VertxMonitorOptions(VertxMonitorOptions other) {
@@ -50,6 +56,8 @@ public class VertxMonitorOptions extends MetricsOptions {
         tenant = other.tenant;
         schedule = other.schedule;
         prefix = other.prefix;
+        queueSize = other.queueSize;
+        batchSize = other.batchSize;
     }
 
     public VertxMonitorOptions(JsonObject json) {
@@ -103,6 +111,24 @@ public class VertxMonitorOptions extends MetricsOptions {
 
     public VertxMonitorOptions setPrefix(String prefix) {
         this.prefix = prefix == null ? DEFAULT_PREFIX : prefix;
+        return this;
+    }
+
+    public int getQueueSize() {
+        return queueSize;
+    }
+
+    public VertxMonitorOptions setQueueSize(int queueSize) {
+        this.queueSize = queueSize;
+        return this;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public VertxMonitorOptions setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
         return this;
     }
 }

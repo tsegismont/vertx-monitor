@@ -16,11 +16,12 @@
  */
 package org.hawkular.vertx.monitor.impl;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
 import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
@@ -31,6 +32,7 @@ import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
+import org.hawkular.metrics.client.common.SingleMetric;
 import org.hawkular.vertx.monitor.VertxMonitorOptions;
 
 /**
@@ -39,39 +41,31 @@ import org.hawkular.vertx.monitor.VertxMonitorOptions;
 public class VertxMetricsImpl extends DummyVertxMetrics {
     private final Vertx vertx;
     private final VertxMonitorOptions vertxMonitorOptions;
-    private final String host;
-    private final int port;
-
-    private HttpClient httpClient;
+    private final BlockingQueue<SingleMetric> metricQueue;
+    private final Sender sender;
 
     public VertxMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions) {
         this.vertx = vertx;
         this.vertxMonitorOptions = vertxMonitorOptions;
-        host = vertxMonitorOptions.getHost();
-        port = vertxMonitorOptions.getPort();
-        vertx.runOnContext(this::init);
-    }
-
-    private void init(Void aVoid) {
-        HttpClientOptions httpClientOptions = new HttpClientOptions().setDefaultHost(host).setDefaultPort(port)
-            .setKeepAlive(true).setTryUseCompression(true);
-        httpClient = vertx.createHttpClient(httpClientOptions);
+        metricQueue = new ArrayBlockingQueue<>(vertxMonitorOptions.getQueueSize());
+        sender = new Sender(vertx, vertxMonitorOptions, metricQueue);
+        vertx.runOnContext(v -> sender.init());
     }
 
     @Override
     public HttpServerMetrics<Long, Void, Void> createMetrics(HttpServer server, SocketAddress localAddress,
         HttpServerOptions options) {
-        return new HttpServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, httpClient);
+        return new HttpServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, metricQueue);
     }
 
     @Override
     public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
-        return new NetServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, httpClient);
+        return new NetServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, metricQueue);
     }
 
     @Override
     public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
-        return new DatagramSocketMetricsImpl(vertx, vertxMonitorOptions, httpClient);
+        return new DatagramSocketMetricsImpl(vertx, vertxMonitorOptions, metricQueue);
     }
 
     @Override
@@ -86,6 +80,6 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
 
     @Override
     public void close() {
-        httpClient.close();
+        sender.stop();
     }
 }
