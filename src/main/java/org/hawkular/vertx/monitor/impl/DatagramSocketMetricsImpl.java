@@ -18,9 +18,9 @@ package org.hawkular.vertx.monitor.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
@@ -44,8 +44,8 @@ public class DatagramSocketMetricsImpl extends ScheduledMetrics implements Datag
     private volatile String serverId;
 
     public DatagramSocketMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions,
-        BlockingQueue<SingleMetric> metricQueue) {
-        super(vertx, vertxMonitorOptions, metricQueue);
+        Handler<List<SingleMetric>> metricHandler) {
+        super(vertx, vertxMonitorOptions, metricHandler);
         String prefix = vertxMonitorOptions.getPrefix();
         baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.datagram";
     }

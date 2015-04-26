@@ -28,16 +28,16 @@ public class VertxMonitorOptions extends MetricsOptions {
     public static final String DEFAULT_TENANT = "default";
     public static final int DEFAULT_SCHEDULE = 1;
     public static final String DEFAULT_PREFIX = "";
-    private static final int DEFAULT_QUEUE_SIZE = 10000;
-    private static final int DEFAULT_BATCH_SIZE = 50;
+    public static final int DEFAULT_BATCH_SIZE = 50;
+    public static final int DEFAULT_BATCH_DELAY = 1;
 
     private String host;
     private int port;
     private String tenant;
     private int schedule;
     private String prefix;
-    private int queueSize;
     private int batchSize;
+    private int batchDelay;
 
     public VertxMonitorOptions() {
         host = DEFAULT_HOST;
@@ -45,8 +45,8 @@ public class VertxMonitorOptions extends MetricsOptions {
         tenant = DEFAULT_TENANT;
         schedule = DEFAULT_SCHEDULE;
         prefix = DEFAULT_PREFIX;
-        queueSize = DEFAULT_QUEUE_SIZE;
         batchSize = DEFAULT_BATCH_SIZE;
+        batchDelay = DEFAULT_BATCH_DELAY;
     }
 
     public VertxMonitorOptions(VertxMonitorOptions other) {
@@ -56,8 +56,8 @@ public class VertxMonitorOptions extends MetricsOptions {
         tenant = other.tenant;
         schedule = other.schedule;
         prefix = other.prefix;
-        queueSize = other.queueSize;
         batchSize = other.batchSize;
+        batchDelay = other.batchDelay;
     }
 
     public VertxMonitorOptions(JsonObject json) {
@@ -67,6 +67,8 @@ public class VertxMonitorOptions extends MetricsOptions {
         tenant = json.getString("tenant", DEFAULT_TENANT);
         schedule = json.getInteger("schedule", DEFAULT_SCHEDULE);
         prefix = json.getString("prefix", DEFAULT_PREFIX);
+        batchSize = json.getInteger("batchSize", DEFAULT_BATCH_SIZE);
+        batchDelay = json.getInteger("batchDelay", DEFAULT_BATCH_DELAY);
     }
 
     public String getHost() {
@@ -114,21 +116,21 @@ public class VertxMonitorOptions extends MetricsOptions {
         return this;
     }
 
-    public int getQueueSize() {
-        return queueSize;
-    }
-
-    public VertxMonitorOptions setQueueSize(int queueSize) {
-        this.queueSize = queueSize;
-        return this;
-    }
-
     public int getBatchSize() {
         return batchSize;
     }
 
     public VertxMonitorOptions setBatchSize(int batchSize) {
         this.batchSize = batchSize;
+        return this;
+    }
+
+    public int getBatchDelay() {
+        return batchDelay;
+    }
+
+    public VertxMonitorOptions setBatchDelay(int batchDelay) {
+        this.batchDelay = batchDelay;
         return this;
     }
 }

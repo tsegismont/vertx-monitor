@@ -16,10 +16,13 @@
  */
 package org.hawkular.vertx.monitor.impl;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.metrics.Metrics;
 
@@ -31,24 +34,21 @@ import org.hawkular.vertx.monitor.VertxMonitorOptions;
  */
 public abstract class ScheduledMetrics implements Metrics {
     private final Vertx vertx;
-    private final BlockingQueue<SingleMetric> metricQueue;
+    private final Handler<List<SingleMetric>> metricHandler;
     private final long timerId;
 
     public ScheduledMetrics(Vertx vertx, VertxMonitorOptions vertxMonitorOptions,
-        BlockingQueue<SingleMetric> metricQueue) {
+        Handler<List<SingleMetric>> metricHandler) {
         this.vertx = vertx;
-        this.metricQueue = metricQueue;
-        timerId = vertx.setPeriodic(vertxMonitorOptions.getSchedule(), this::collectAndQueue);
+        this.metricHandler = metricHandler;
+        long schedule = MILLISECONDS.convert(vertxMonitorOptions.getSchedule(), SECONDS);
+        timerId = vertx.setPeriodic(schedule, this::collectAndQueue);
     }
 
     private void collectAndQueue(Long timerId) {
         List<SingleMetric> metrics = collect();
         if (metrics != null && !metrics.isEmpty()) {
-            vertx.executeBlocking(future -> {
-                metrics.forEach(metricQueue::offer);
-                future.complete(null);
-            }, result -> {
-            });
+            metricHandler.handle(metrics);
         }
     }
 

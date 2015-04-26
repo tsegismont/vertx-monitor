@@ -1,3 +1,4 @@
+* Add argument checks (schedules, sizes)
 * Implement event bus metrics (+ example)
 * Minimal documentation (+ check Javadoc: indicate the type of metrics)
 * Integration tests

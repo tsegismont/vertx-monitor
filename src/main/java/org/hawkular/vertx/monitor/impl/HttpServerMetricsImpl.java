@@ -21,9 +21,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -56,8 +56,8 @@ public class HttpServerMetricsImpl extends ScheduledMetrics implements HttpServe
     private final AtomicLong errorCount = new AtomicLong(0);
 
     public HttpServerMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions, SocketAddress localAddress,
-        BlockingQueue<SingleMetric> metricQueue) {
-        super(vertx, vertxMonitorOptions, metricQueue);
+        Handler<List<SingleMetric>> metricHandler) {
+        super(vertx, vertxMonitorOptions, metricHandler);
         String serverId = localAddress.host() + ":" + localAddress.port();
         String prefix = vertxMonitorOptions.getPrefix();
         baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.http.server." + serverId;

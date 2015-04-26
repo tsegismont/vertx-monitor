@@ -18,9 +18,9 @@ package org.hawkular.vertx.monitor.impl;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.TCPMetrics;
@@ -44,8 +44,8 @@ public class NetServerMetricsImpl extends ScheduledMetrics implements TCPMetrics
     private final AtomicLong errorCount = new AtomicLong(0);
 
     public NetServerMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions, SocketAddress localAddress,
-        BlockingQueue<SingleMetric> metricQueue) {
-        super(vertx, vertxMonitorOptions, metricQueue);
+        Handler<List<SingleMetric>> metricHandler) {
+        super(vertx, vertxMonitorOptions, metricHandler);
         String serverId = localAddress.host() + ":" + localAddress.port();
         String prefix = vertxMonitorOptions.getPrefix();
         baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.net.server." + serverId;

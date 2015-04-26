@@ -32,6 +32,7 @@ public class DatagramServerExample {
     public static void main(String[] args) {
         VertxMonitorOptions vertxMonitorOptions = new VertxMonitorOptions();
         vertxMonitorOptions.setPrefix("instance1");
+        vertxMonitorOptions.setBatchSize(4).setBatchDelay(5);
         vertxMonitorOptions.setEnabled(true);
 
         VertxOptions vertxOptions = new VertxOptions();
@@ -40,13 +41,15 @@ public class DatagramServerExample {
         Vertx vertx = Vertx.vertx(vertxOptions);
 
         DatagramSocket datagramSocket = vertx.createDatagramSocket();
-        datagramSocket.handler(p-> {
+        datagramSocket.handler(p -> {
             System.out.println(p.data().toString());
         });
-        datagramSocket.listen(9393, "127.0.0.1", s -> {});
+        datagramSocket.listen(9393, "127.0.0.1", s -> {
+        });
 
         vertx.setPeriodic(1000, id -> {
-            datagramSocket.send(String.valueOf(new Date()), 9393, "127.0.0.1", d -> {});
+            datagramSocket.send(String.valueOf(new Date()), 9393, "127.0.0.1", d -> {
+            });
         });
     }
 }

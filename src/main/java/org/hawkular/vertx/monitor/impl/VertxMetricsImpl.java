@@ -16,9 +16,6 @@
  */
 package org.hawkular.vertx.monitor.impl;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-
 import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
@@ -32,7 +29,6 @@ import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
-import org.hawkular.metrics.client.common.SingleMetric;
 import org.hawkular.vertx.monitor.VertxMonitorOptions;
 
 /**
@@ -41,31 +37,28 @@ import org.hawkular.vertx.monitor.VertxMonitorOptions;
 public class VertxMetricsImpl extends DummyVertxMetrics {
     private final Vertx vertx;
     private final VertxMonitorOptions vertxMonitorOptions;
-    private final BlockingQueue<SingleMetric> metricQueue;
     private final Sender sender;
 
     public VertxMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions) {
         this.vertx = vertx;
         this.vertxMonitorOptions = vertxMonitorOptions;
-        metricQueue = new ArrayBlockingQueue<>(vertxMonitorOptions.getQueueSize());
-        sender = new Sender(vertx, vertxMonitorOptions, metricQueue);
-        vertx.runOnContext(v -> sender.init());
+        sender = new Sender(vertx, vertxMonitorOptions);
     }
 
     @Override
     public HttpServerMetrics<Long, Void, Void> createMetrics(HttpServer server, SocketAddress localAddress,
         HttpServerOptions options) {
-        return new HttpServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, metricQueue);
+        return new HttpServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, sender);
     }
 
     @Override
     public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
-        return new NetServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, metricQueue);
+        return new NetServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, sender);
     }
 
     @Override
     public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
-        return new DatagramSocketMetricsImpl(vertx, vertxMonitorOptions, metricQueue);
+        return new DatagramSocketMetricsImpl(vertx, vertxMonitorOptions, sender);
     }
 
     @Override

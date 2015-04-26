@@ -16,14 +16,15 @@
  */
 package org.hawkular.vertx.monitor.impl;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
+import io.vertx.core.Context;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
@@ -39,79 +40,90 @@ import org.hawkular.vertx.monitor.VertxMonitorOptions;
 /**
  * @author Thomas Segismont
  */
-public class Sender {
+public class Sender implements Handler<List<SingleMetric>> {
     private static final Logger LOG = LoggerFactory.getLogger(Sender.class);
 
     private final Vertx vertx;
     private final VertxMonitorOptions vertxMonitorOptions;
-    private final BlockingQueue<SingleMetric> metricQueue;
     private final String metricsURI;
-    private final ExecutorService executorService;
     private final int batchSize;
+    private final long batchDelay;
+    private final List<SingleMetric> queue;
+    private final Context context;
 
     private HttpClient httpClient;
+    private long timerId;
+    private long sendTime;
 
-    public Sender(Vertx vertx, VertxMonitorOptions vertxMonitorOptions, BlockingQueue<SingleMetric> metricQueue) {
+    public Sender(Vertx vertx, VertxMonitorOptions vertxMonitorOptions) {
         this.vertx = vertx;
         this.vertxMonitorOptions = vertxMonitorOptions;
-        this.metricQueue = metricQueue;
         metricsURI = "/hawkular-metrics/" + vertxMonitorOptions.getTenant() + "/metrics/numeric/data";
-        executorService = Executors.newSingleThreadExecutor(r -> {
-            Thread thread = Executors.defaultThreadFactory().newThread(r);
-            thread.setName("vertx-monitor-sender");
-            return thread;
-        });
         batchSize = vertxMonitorOptions.getBatchSize();
+        batchDelay = vertxMonitorOptions.getBatchDelay();
+        queue = new ArrayList<>(batchSize);
+        context = vertx.getOrCreateContext();
+        context.runOnContext(v -> init());
     }
 
-    public void init() {
+    private void init() {
         HttpClientOptions httpClientOptions = new HttpClientOptions().setDefaultHost(vertxMonitorOptions.getHost())
             .setDefaultPort(vertxMonitorOptions.getPort()).setKeepAlive(true).setTryUseCompression(true);
         httpClient = vertx.createHttpClient(httpClientOptions);
-        executorService.submit(this::send);
+        timerId = vertx.setPeriodic(MILLISECONDS.convert(batchDelay, SECONDS), this::flushIfIdle);
+        sendTime = System.nanoTime();
     }
 
-    private void send() {
-        while (!executorService.isShutdown()) {
-            List<SingleMetric> batch = getNextBatch();
-
-            String json = Batcher.metricListToJson(batch);
-            Buffer buffer = Buffer.buffer(json);
-            HttpClientRequest req = httpClient.post(
-                metricsURI,
-                response -> {
-                    if (response.statusCode() != 200 && LOG.isTraceEnabled()) {
-                        response.bodyHandler(msg -> LOG.trace("Could not send metrics: " + response.statusCode()
-                            + " : " + msg.toString()));
-                    }
-                });
-            req.putHeader("Content-Length", String.valueOf(buffer.length()));
-            req.putHeader("Content-Type", "application/json");
-            req.exceptionHandler(err -> LOG.trace("Could not send metrics", err));
-            req.write(buffer);
-            req.end();
-        }
+    @Override
+    public void handle(List<SingleMetric> metrics) {
+        context.runOnContext(v -> accept(metrics));
     }
 
-    private List<SingleMetric> getNextBatch() {
-        List<SingleMetric> list = new ArrayList<>(batchSize);
-        metricQueue.drainTo(list, batchSize);
-        if (list.size() < batchSize) {
-            try {
-                SingleMetric next = metricQueue.poll(1, SECONDS);
-                if (next != null) {
-                    metricQueue.add(next);
-                }
-                if (list.size() < batchSize) {
-                    metricQueue.drainTo(list, batchSize - list.size());
-                }
-            } catch (InterruptedException ignored) {
-            }
+    private void accept(List<SingleMetric> metrics) {
+        if (queue.size() + metrics.size() < batchSize) {
+            queue.addAll(metrics);
+            return;
         }
-        return list;
+        List<SingleMetric> temp = new ArrayList<>(queue.size() + metrics.size());
+        temp.addAll(queue);
+        temp.addAll(metrics);
+        queue.clear();
+        do {
+            List<SingleMetric> subList = temp.subList(0, batchSize);
+            send(subList);
+            subList.clear();
+        } while (temp.size() >= batchSize);
+        queue.addAll(temp);
+    }
+
+    private void send(List<SingleMetric> metrics) {
+        String json = Batcher.metricListToJson(metrics);
+        Buffer buffer = Buffer.buffer(json);
+        HttpClientRequest req = httpClient.post(
+            metricsURI,
+            response -> {
+                if (response.statusCode() != 200 && LOG.isTraceEnabled()) {
+                    response.bodyHandler(msg -> LOG.trace("Could not send metrics: " + response.statusCode() + " : "
+                        + msg.toString()));
+                }
+            });
+        req.putHeader("Content-Length", String.valueOf(buffer.length()));
+        req.putHeader("Content-Type", "application/json");
+        req.exceptionHandler(err -> LOG.trace("Could not send metrics", err));
+        req.write(buffer);
+        req.end();
+        sendTime = System.nanoTime();
+    }
+
+    private void flushIfIdle(Long timerId) {
+        if (System.nanoTime() - sendTime > NANOSECONDS.convert(batchDelay, SECONDS) && !queue.isEmpty()) {
+            send(queue);
+            queue.clear();
+        }
     }
 
     public void stop() {
-        executorService.shutdownNow();
+        vertx.cancelTimer(timerId);
+        httpClient.close();
     }
 }
