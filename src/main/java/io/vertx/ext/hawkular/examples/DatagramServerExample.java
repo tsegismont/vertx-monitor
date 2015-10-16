@@ -18,7 +18,7 @@ package io.vertx.ext.hawkular.examples;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.datagram.DatagramSocket;
-import io.vertx.ext.hawkular.VertxMonitorOptions;
+import io.vertx.ext.hawkular.VertxHawkularOptions;
 
 import java.util.Date;
 
@@ -28,13 +28,13 @@ import java.util.Date;
 public class DatagramServerExample {
 
   public static void main(String[] args) {
-    VertxMonitorOptions vertxMonitorOptions = new VertxMonitorOptions();
-    vertxMonitorOptions.setPrefix("instance1");
-    vertxMonitorOptions.setBatchSize(4).setBatchDelay(5);
-    vertxMonitorOptions.setEnabled(true);
+    VertxHawkularOptions vertxHawkularOptions = new VertxHawkularOptions();
+    vertxHawkularOptions.setPrefix("instance1");
+    vertxHawkularOptions.setBatchSize(4).setBatchDelay(5);
+    vertxHawkularOptions.setEnabled(true);
 
     VertxOptions vertxOptions = new VertxOptions();
-    vertxOptions.setMetricsOptions(vertxMonitorOptions);
+    vertxOptions.setMetricsOptions(vertxHawkularOptions);
 
     Vertx vertx = Vertx.vertx(vertxOptions);
 

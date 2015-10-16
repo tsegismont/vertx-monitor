@@ -1,0 +1,24 @@
+= Cheatsheets
+
+[[VertxHawkularOptions]]
+== VertxHawkularOptions
+
+++++
+ @author Thomas Segismont
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[batchDelay]]`batchDelay`|`Number (int)`|-
+|[[batchSize]]`batchSize`|`Number (int)`|-
+|[[enabled]]`enabled`|`Boolean`|-
+|[[host]]`host`|`String`|-
+|[[port]]`port`|`Number (int)`|-
+|[[prefix]]`prefix`|`String`|-
+|[[schedule]]`schedule`|`Number (int)`|-
+|[[tenant]]`tenant`|`String`|-
+|===
+

@@ -22,7 +22,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.ext.hawkular.VertxMonitorOptions;
+import io.vertx.ext.hawkular.VertxHawkularOptions;
 import org.hawkular.metrics.client.common.MetricType;
 import org.hawkular.metrics.client.common.SingleMetric;
 
@@ -52,11 +52,11 @@ public class HttpServerMetricsImpl extends ScheduledMetrics implements HttpServe
   // Other
   private final AtomicLong errorCount = new AtomicLong(0);
 
-  public HttpServerMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions, SocketAddress localAddress,
+  public HttpServerMetricsImpl(Vertx vertx, VertxHawkularOptions vertxHawkularOptions, SocketAddress localAddress,
                                Handler<List<SingleMetric>> metricHandler) {
-    super(vertx, vertxMonitorOptions, metricHandler);
+    super(vertx, vertxHawkularOptions, metricHandler);
     String serverId = localAddress.host() + ":" + localAddress.port();
-    String prefix = vertxMonitorOptions.getPrefix();
+    String prefix = vertxHawkularOptions.getPrefix();
     baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.http.server." + serverId;
   }
 

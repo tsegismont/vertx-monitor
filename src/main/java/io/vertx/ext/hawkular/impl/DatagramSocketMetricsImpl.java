@@ -19,7 +19,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
-import io.vertx.ext.hawkular.VertxMonitorOptions;
+import io.vertx.ext.hawkular.VertxHawkularOptions;
 import org.hawkular.metrics.client.common.MetricType;
 import org.hawkular.metrics.client.common.SingleMetric;
 
@@ -41,10 +41,10 @@ public class DatagramSocketMetricsImpl extends ScheduledMetrics implements Datag
 
   private volatile String serverId;
 
-  public DatagramSocketMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions,
+  public DatagramSocketMetricsImpl(Vertx vertx, VertxHawkularOptions vertxHawkularOptions,
                                    Handler<List<SingleMetric>> metricHandler) {
-    super(vertx, vertxMonitorOptions, metricHandler);
-    String prefix = vertxMonitorOptions.getPrefix();
+    super(vertx, vertxHawkularOptions, metricHandler);
+    String prefix = vertxHawkularOptions.getPrefix();
     baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.datagram";
   }
 

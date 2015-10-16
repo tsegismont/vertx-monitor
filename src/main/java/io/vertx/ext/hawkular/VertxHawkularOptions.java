@@ -15,13 +15,15 @@
  */
 package io.vertx.ext.hawkular;
 
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 
 /**
  * @author Thomas Segismont
  */
-public class VertxMonitorOptions extends MetricsOptions {
+@DataObject(generateConverter = true)
+public class VertxHawkularOptions extends MetricsOptions {
   public static final String DEFAULT_HOST = "localhost";
   public static final int DEFAULT_PORT = 8080;
   public static final String DEFAULT_TENANT = "default";
@@ -38,7 +40,7 @@ public class VertxMonitorOptions extends MetricsOptions {
   private int batchSize;
   private int batchDelay;
 
-  public VertxMonitorOptions() {
+  public VertxHawkularOptions() {
     host = DEFAULT_HOST;
     port = DEFAULT_PORT;
     tenant = DEFAULT_TENANT;
@@ -48,7 +50,7 @@ public class VertxMonitorOptions extends MetricsOptions {
     batchDelay = DEFAULT_BATCH_DELAY;
   }
 
-  public VertxMonitorOptions(VertxMonitorOptions other) {
+  public VertxHawkularOptions(VertxHawkularOptions other) {
     super(other);
     host = other.host;
     port = other.port;
@@ -59,22 +61,16 @@ public class VertxMonitorOptions extends MetricsOptions {
     batchDelay = other.batchDelay;
   }
 
-  public VertxMonitorOptions(JsonObject json) {
+  public VertxHawkularOptions(JsonObject json) {
     super(json);
-    host = json.getString("host", DEFAULT_HOST);
-    port = json.getInteger("port", DEFAULT_PORT);
-    tenant = json.getString("tenant", DEFAULT_TENANT);
-    schedule = json.getInteger("schedule", DEFAULT_SCHEDULE);
-    prefix = json.getString("prefix", DEFAULT_PREFIX);
-    batchSize = json.getInteger("batchSize", DEFAULT_BATCH_SIZE);
-    batchDelay = json.getInteger("batchDelay", DEFAULT_BATCH_DELAY);
+    VertxHawkularOptionsConverter.fromJson(json, this);
   }
 
   public String getHost() {
     return host;
   }
 
-  public VertxMonitorOptions setHost(String host) {
+  public VertxHawkularOptions setHost(String host) {
     this.host = host;
     return this;
   }
@@ -83,7 +79,7 @@ public class VertxMonitorOptions extends MetricsOptions {
     return port;
   }
 
-  public VertxMonitorOptions setPort(int port) {
+  public VertxHawkularOptions setPort(int port) {
     this.port = port;
     return this;
   }
@@ -92,7 +88,7 @@ public class VertxMonitorOptions extends MetricsOptions {
     return tenant;
   }
 
-  public VertxMonitorOptions setTenant(String tenant) {
+  public VertxHawkularOptions setTenant(String tenant) {
     this.tenant = tenant;
     return this;
   }
@@ -101,7 +97,7 @@ public class VertxMonitorOptions extends MetricsOptions {
     return schedule;
   }
 
-  public VertxMonitorOptions setSchedule(int schedule) {
+  public VertxHawkularOptions setSchedule(int schedule) {
     this.schedule = schedule;
     return this;
   }
@@ -110,7 +106,7 @@ public class VertxMonitorOptions extends MetricsOptions {
     return prefix;
   }
 
-  public VertxMonitorOptions setPrefix(String prefix) {
+  public VertxHawkularOptions setPrefix(String prefix) {
     this.prefix = prefix == null ? DEFAULT_PREFIX : prefix;
     return this;
   }
@@ -119,7 +115,7 @@ public class VertxMonitorOptions extends MetricsOptions {
     return batchSize;
   }
 
-  public VertxMonitorOptions setBatchSize(int batchSize) {
+  public VertxHawkularOptions setBatchSize(int batchSize) {
     this.batchSize = batchSize;
     return this;
   }
@@ -128,7 +124,7 @@ public class VertxMonitorOptions extends MetricsOptions {
     return batchDelay;
   }
 
-  public VertxMonitorOptions setBatchDelay(int batchDelay) {
+  public VertxHawkularOptions setBatchDelay(int batchDelay) {
     this.batchDelay = batchDelay;
     return this;
   }

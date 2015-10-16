@@ -27,36 +27,36 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.ext.hawkular.VertxMonitorOptions;
+import io.vertx.ext.hawkular.VertxHawkularOptions;
 
 /**
  * @author Thomas Segismont
  */
 public class VertxMetricsImpl extends DummyVertxMetrics {
   private final Vertx vertx;
-  private final VertxMonitorOptions vertxMonitorOptions;
+  private final VertxHawkularOptions vertxHawkularOptions;
   private final Sender sender;
 
-  public VertxMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions) {
+  public VertxMetricsImpl(Vertx vertx, VertxHawkularOptions vertxHawkularOptions) {
     this.vertx = vertx;
-    this.vertxMonitorOptions = vertxMonitorOptions;
-    sender = new Sender(vertx, vertxMonitorOptions);
+    this.vertxHawkularOptions = vertxHawkularOptions;
+    sender = new Sender(vertx, vertxHawkularOptions);
   }
 
   @Override
   public HttpServerMetrics<Long, Void, Void> createMetrics(HttpServer server, SocketAddress localAddress,
                                                            HttpServerOptions options) {
-    return new HttpServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, sender);
+    return new HttpServerMetricsImpl(vertx, vertxHawkularOptions, localAddress, sender);
   }
 
   @Override
   public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
-    return new NetServerMetricsImpl(vertx, vertxMonitorOptions, localAddress, sender);
+    return new NetServerMetricsImpl(vertx, vertxHawkularOptions, localAddress, sender);
   }
 
   @Override
   public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
-    return new DatagramSocketMetricsImpl(vertx, vertxMonitorOptions, sender);
+    return new DatagramSocketMetricsImpl(vertx, vertxHawkularOptions, sender);
   }
 
   @Override

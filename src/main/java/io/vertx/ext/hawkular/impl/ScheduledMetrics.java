@@ -18,7 +18,7 @@ package io.vertx.ext.hawkular.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.ext.hawkular.VertxMonitorOptions;
+import io.vertx.ext.hawkular.VertxHawkularOptions;
 import org.hawkular.metrics.client.common.SingleMetric;
 
 import java.util.Collections;
@@ -34,11 +34,11 @@ public abstract class ScheduledMetrics implements Metrics {
   private final Handler<List<SingleMetric>> metricHandler;
   private final long timerId;
 
-  public ScheduledMetrics(Vertx vertx, VertxMonitorOptions vertxMonitorOptions,
+  public ScheduledMetrics(Vertx vertx, VertxHawkularOptions vertxHawkularOptions,
                           Handler<List<SingleMetric>> metricHandler) {
     this.vertx = vertx;
     this.metricHandler = metricHandler;
-    long schedule = MILLISECONDS.convert(vertxMonitorOptions.getSchedule(), SECONDS);
+    long schedule = MILLISECONDS.convert(vertxHawkularOptions.getSchedule(), SECONDS);
     timerId = vertx.setPeriodic(schedule, this::collectAndQueue);
   }
 

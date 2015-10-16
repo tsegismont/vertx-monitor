@@ -19,7 +19,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.ext.hawkular.VertxMonitorOptions;
+import io.vertx.ext.hawkular.VertxHawkularOptions;
 import org.hawkular.metrics.client.common.MetricType;
 import org.hawkular.metrics.client.common.SingleMetric;
 
@@ -41,11 +41,11 @@ public class NetServerMetricsImpl extends ScheduledMetrics implements TCPMetrics
   // Other
   private final AtomicLong errorCount = new AtomicLong(0);
 
-  public NetServerMetricsImpl(Vertx vertx, VertxMonitorOptions vertxMonitorOptions, SocketAddress localAddress,
+  public NetServerMetricsImpl(Vertx vertx, VertxHawkularOptions vertxHawkularOptions, SocketAddress localAddress,
                               Handler<List<SingleMetric>> metricHandler) {
-    super(vertx, vertxMonitorOptions, metricHandler);
+    super(vertx, vertxHawkularOptions, metricHandler);
     String serverId = localAddress.host() + ":" + localAddress.port();
-    String prefix = vertxMonitorOptions.getPrefix();
+    String prefix = vertxHawkularOptions.getPrefix();
     baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.net.server." + serverId;
   }
 

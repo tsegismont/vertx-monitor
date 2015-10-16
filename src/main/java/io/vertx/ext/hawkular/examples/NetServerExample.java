@@ -18,7 +18,7 @@ package io.vertx.ext.hawkular.examples;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.net.NetServer;
-import io.vertx.ext.hawkular.VertxMonitorOptions;
+import io.vertx.ext.hawkular.VertxHawkularOptions;
 
 /**
  * @author Thomas Segismont
@@ -26,12 +26,12 @@ import io.vertx.ext.hawkular.VertxMonitorOptions;
 public class NetServerExample {
 
   public static void main(String[] args) {
-    VertxMonitorOptions vertxMonitorOptions = new VertxMonitorOptions();
-    vertxMonitorOptions.setPrefix("instance1");
-    vertxMonitorOptions.setEnabled(true);
+    VertxHawkularOptions vertxHawkularOptions = new VertxHawkularOptions();
+    vertxHawkularOptions.setPrefix("instance1");
+    vertxHawkularOptions.setEnabled(true);
 
     VertxOptions vertxOptions = new VertxOptions();
-    vertxOptions.setMetricsOptions(vertxMonitorOptions);
+    vertxOptions.setMetricsOptions(vertxHawkularOptions);
 
     Vertx vertx = Vertx.vertx(vertxOptions);
 

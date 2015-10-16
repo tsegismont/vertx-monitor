@@ -24,7 +24,7 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.ext.hawkular.VertxMonitorOptions;
+import io.vertx.ext.hawkular.VertxHawkularOptions;
 import org.hawkular.metrics.client.common.Batcher;
 import org.hawkular.metrics.client.common.SingleMetric;
 
@@ -40,7 +40,7 @@ public class Sender implements Handler<List<SingleMetric>> {
   private static final Logger LOG = LoggerFactory.getLogger(Sender.class);
 
   private final Vertx vertx;
-  private final VertxMonitorOptions vertxMonitorOptions;
+  private final VertxHawkularOptions vertxHawkularOptions;
   private final String metricsURI;
   private final int batchSize;
   private final long batchDelay;
@@ -51,20 +51,20 @@ public class Sender implements Handler<List<SingleMetric>> {
   private long timerId;
   private long sendTime;
 
-  public Sender(Vertx vertx, VertxMonitorOptions vertxMonitorOptions) {
+  public Sender(Vertx vertx, VertxHawkularOptions vertxHawkularOptions) {
     this.vertx = vertx;
-    this.vertxMonitorOptions = vertxMonitorOptions;
-    metricsURI = "/hawkular-metrics/" + vertxMonitorOptions.getTenant() + "/metrics/numeric/data";
-    batchSize = vertxMonitorOptions.getBatchSize();
-    batchDelay = vertxMonitorOptions.getBatchDelay();
+    this.vertxHawkularOptions = vertxHawkularOptions;
+    metricsURI = "/hawkular-metrics/" + vertxHawkularOptions.getTenant() + "/metrics/numeric/data";
+    batchSize = vertxHawkularOptions.getBatchSize();
+    batchDelay = vertxHawkularOptions.getBatchDelay();
     queue = new ArrayList<>(batchSize);
     context = vertx.getOrCreateContext();
     context.runOnContext(v -> init());
   }
 
   private void init() {
-    HttpClientOptions httpClientOptions = new HttpClientOptions().setDefaultHost(vertxMonitorOptions.getHost())
-      .setDefaultPort(vertxMonitorOptions.getPort()).setKeepAlive(true).setTryUseCompression(true);
+    HttpClientOptions httpClientOptions = new HttpClientOptions().setDefaultHost(vertxHawkularOptions.getHost())
+      .setDefaultPort(vertxHawkularOptions.getPort()).setKeepAlive(true).setTryUseCompression(true);
     httpClient = vertx.createHttpClient(httpClientOptions);
     timerId = vertx.setPeriodic(MILLISECONDS.convert(batchDelay, SECONDS), this::flushIfIdle);
     sendTime = System.nanoTime();

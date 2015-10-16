@@ -20,7 +20,7 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.metrics.VertxMetrics;
-import io.vertx.ext.hawkular.VertxMonitorOptions;
+import io.vertx.ext.hawkular.VertxHawkularOptions;
 
 /**
  * @author Thomas Segismont
@@ -29,12 +29,12 @@ public class VertxMetricsFactoryImpl implements VertxMetricsFactory {
   @Override
   public VertxMetrics metrics(Vertx vertx, VertxOptions vertxOptions) {
     MetricsOptions metricsOptions = vertxOptions.getMetricsOptions();
-    VertxMonitorOptions vertxMonitorOptions;
-    if (metricsOptions instanceof VertxMonitorOptions) {
-      vertxMonitorOptions = (VertxMonitorOptions) metricsOptions;
+    VertxHawkularOptions vertxHawkularOptions;
+    if (metricsOptions instanceof VertxHawkularOptions) {
+      vertxHawkularOptions = (VertxHawkularOptions) metricsOptions;
     } else {
-      vertxMonitorOptions = new VertxMonitorOptions(metricsOptions.toJson());
+      vertxHawkularOptions = new VertxHawkularOptions(metricsOptions.toJson());
     }
-    return new VertxMetricsImpl(vertx, vertxMonitorOptions);
+    return new VertxMetricsImpl(vertx, vertxHawkularOptions);
   }
 }

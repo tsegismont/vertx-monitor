@@ -30,18 +30,18 @@ Once the project is built, add the dependency to your Vert.x 3 project. For Mave
 <parent>
  <groupId>org.hawkular</groupId>
  <artifactId>vertx-monitor</artifactId>
- <version>0.0.1-SNAPSHOT</version>
+ <version>3.2.0-SNAPSHOT</version>
 </parent>
 ----
 
 Then, you must enable Vert.x Metrics:
 [source, java]
 ----
-VertxMonitorOptions vertxMonitorOptions = new VertxMonitorOptions();
-vertxMonitorOptions.setEnabled(true); // By default Vert.x Metrics is disabled
+VertxHawkularOptions vertxHawkularOptions = new VertxHawkularOptions();
+vertxHawkularOptions.setEnabled(true); // By default Vert.x Metrics is disabled
 
 VertxOptions vertxOptions = new VertxOptions();
-vertxOptions.setMetricsOptions(vertxMonitorOptions);
+vertxOptions.setMetricsOptions(vertxHawkularOptions);
 
 Vertx vertx = Vertx.vertx(vertxOptions);
 ----
@@ -54,20 +54,20 @@ can be found in the `org.hawkular.vertx.monitor.examples` package.
 Here's how to configure Vert.x Monitor
 [source, java]
 ----
-VertxMonitorOptions vertxMonitorOptions = new VertxMonitorOptions() // <1>
+VertxHawkularOptions vertxHawkularOptions = new VertxHawkularOptions() // <1>
         .setHost("localhost") // <2>
         .setPort(8080) // <3>
         .setTenant("default") // <4>
         .setPrefix("instance1") // <5>
         .setSchedule(3); // <6>
-vertxMonitorOptions.setEnabled(true); // <7>
+vertxHawkularOptions.setEnabled(true); // <7>
 
 VertxOptions vertxOptions = new VertxOptions()
-        .setMetricsOptions(vertxMonitorOptions); // <8>
+        .setMetricsOptions(vertxHawkularOptions); // <8>
 
 Vertx vertx = Vertx.vertx(vertxOptions); // <9>
 ----
-<1> `VertxMonitorOptions` extends `io.vertx.core.metrics.MetricsOptions`
+<1> `VertxHawkularOptions` extends `io.vertx.core.metrics.MetricsOptions`
 <2> Host of the Hawkular Metrics server, defaults to `localhost`
 <3> Port of the Hawkular Metrics server, defaults to `8080`
 <4> The Hawkular Metrics `tenant` (Hawkular Metrics standalone servers will accept any value), defaults to `default`
@@ -75,7 +75,7 @@ Vertx vertx = Vertx.vertx(vertxOptions); // <9>
 by default
 <6> How often (in seconds) metrics will be collected and sent to the Hawkular Metrics server, defaults to `1`
 <7> The *Vert.x Metrics SPI is disabled by default*, so make sure to enable it
-<8> Add your `VertxMonitorOptions` to the `io.vertx.core.VertxOptions`
+<8> Add your `VertxHawkularOptions` to the `io.vertx.core.VertxOptions`
 <9> Create the Vert.x instance
 
 == Limitations

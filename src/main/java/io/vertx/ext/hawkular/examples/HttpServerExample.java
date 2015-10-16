@@ -18,7 +18,7 @@ package io.vertx.ext.hawkular.examples;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServer;
-import io.vertx.ext.hawkular.VertxMonitorOptions;
+import io.vertx.ext.hawkular.VertxHawkularOptions;
 
 /**
  * @author Thomas Segismont
@@ -26,16 +26,16 @@ import io.vertx.ext.hawkular.VertxMonitorOptions;
 public class HttpServerExample {
 
   public static void main(String[] args) {
-    VertxMonitorOptions vertxMonitorOptions = new VertxMonitorOptions()
+    VertxHawkularOptions vertxHawkularOptions = new VertxHawkularOptions()
       .setHost("localhost")
       .setPort(8080)
       .setTenant("default")
       .setPrefix("instance1")
       .setSchedule(3);
-    vertxMonitorOptions.setEnabled(true);
+    vertxHawkularOptions.setEnabled(true);
 
     VertxOptions vertxOptions = new VertxOptions();
-    vertxOptions.setMetricsOptions(vertxMonitorOptions);
+    vertxOptions.setMetricsOptions(vertxHawkularOptions);
 
     Vertx vertx = Vertx.vertx(vertxOptions);
 
