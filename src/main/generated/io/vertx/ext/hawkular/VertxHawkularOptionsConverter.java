@@ -27,28 +27,28 @@ public class VertxHawkularOptionsConverter {
 
   public static void fromJson(JsonObject json, VertxHawkularOptions obj) {
     if (json.getValue("batchDelay") instanceof Number) {
-      obj.setBatchDelay(((Number) json.getValue("batchDelay")).intValue());
+      obj.setBatchDelay(((Number)json.getValue("batchDelay")).intValue());
     }
     if (json.getValue("batchSize") instanceof Number) {
-      obj.setBatchSize(((Number) json.getValue("batchSize")).intValue());
+      obj.setBatchSize(((Number)json.getValue("batchSize")).intValue());
     }
     if (json.getValue("enabled") instanceof Boolean) {
-      obj.setEnabled((Boolean) json.getValue("enabled"));
+      obj.setEnabled((Boolean)json.getValue("enabled"));
     }
-    if (json.getValue("host") instanceof String) {
-      obj.setHost((String) json.getValue("host"));
+    if (json.getValue("httpOptions") instanceof JsonObject) {
+      obj.setHttpOptions(new io.vertx.core.http.HttpClientOptions((JsonObject)json.getValue("httpOptions")));
     }
-    if (json.getValue("port") instanceof Number) {
-      obj.setPort(((Number) json.getValue("port")).intValue());
+    if (json.getValue("metricsServiceUri") instanceof String) {
+      obj.setMetricsServiceUri((String)json.getValue("metricsServiceUri"));
     }
     if (json.getValue("prefix") instanceof String) {
-      obj.setPrefix((String) json.getValue("prefix"));
+      obj.setPrefix((String)json.getValue("prefix"));
     }
     if (json.getValue("schedule") instanceof Number) {
-      obj.setSchedule(((Number) json.getValue("schedule")).intValue());
+      obj.setSchedule(((Number)json.getValue("schedule")).intValue());
     }
     if (json.getValue("tenant") instanceof String) {
-      obj.setTenant((String) json.getValue("tenant"));
+      obj.setTenant((String)json.getValue("tenant"));
     }
   }
 
@@ -56,10 +56,9 @@ public class VertxHawkularOptionsConverter {
     json.put("batchDelay", obj.getBatchDelay());
     json.put("batchSize", obj.getBatchSize());
     json.put("enabled", obj.isEnabled());
-    if (obj.getHost() != null) {
-      json.put("host", obj.getHost());
+    if (obj.getMetricsServiceUri() != null) {
+      json.put("metricsServiceUri", obj.getMetricsServiceUri());
     }
-    json.put("port", obj.getPort());
     if (obj.getPrefix() != null) {
       json.put("prefix", obj.getPrefix());
     }

@@ -4,7 +4,7 @@
 == VertxHawkularOptions
 
 ++++
- @author Thomas Segismont
+ Vert.x Hawkular monitoring configuration.
 ++++
 '''
 
@@ -12,13 +12,34 @@
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[batchDelay]]`batchDelay`|`Number (int)`|-
-|[[batchSize]]`batchSize`|`Number (int)`|-
+|[[batchDelay]]`batchDelay`|`Number (int)`|
++++
+Set the maximum delay between two consecutive batches (in seconds).
++++
+|[[batchSize]]`batchSize`|`Number (int)`|
++++
+Set the maximum number of metrics in a batch.
++++
 |[[enabled]]`enabled`|`Boolean`|-
-|[[host]]`host`|`String`|-
-|[[port]]`port`|`Number (int)`|-
-|[[prefix]]`prefix`|`String`|-
-|[[schedule]]`schedule`|`Number (int)`|-
-|[[tenant]]`tenant`|`String`|-
+|[[httpOptions]]`httpOptions`|`link:dataobjects.html#HttpClientOptions[HttpClientOptions]`|
++++
+Set the configuration of the Hawkular Metrics HTTP client.
++++
+|[[metricsServiceUri]]`metricsServiceUri`|`String`|
++++
+Set the Hawkular Metrics service URI.
++++
+|[[prefix]]`prefix`|`String`|
++++
+Set the metric name prefix.
++++
+|[[schedule]]`schedule`|`Number (int)`|
++++
+Set the metric collection interval (in seconds).
++++
+|[[tenant]]`tenant`|`String`|
++++
+Set the Hawkular tenant.
++++
 |===
 

@@ -20,7 +20,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -42,6 +41,7 @@ public class Sender implements Handler<List<SingleMetric>> {
   private final Vertx vertx;
   private final VertxHawkularOptions vertxHawkularOptions;
   private final String metricsURI;
+  private final String tenant;
   private final int batchSize;
   private final long batchDelay;
   private final List<SingleMetric> queue;
@@ -54,7 +54,8 @@ public class Sender implements Handler<List<SingleMetric>> {
   public Sender(Vertx vertx, VertxHawkularOptions vertxHawkularOptions) {
     this.vertx = vertx;
     this.vertxHawkularOptions = vertxHawkularOptions;
-    metricsURI = "/hawkular-metrics/" + vertxHawkularOptions.getTenant() + "/metrics/numeric/data";
+    metricsURI = vertxHawkularOptions.getMetricsServiceUri() + "/gauges/data";
+    tenant = vertxHawkularOptions.getTenant();
     batchSize = vertxHawkularOptions.getBatchSize();
     batchDelay = vertxHawkularOptions.getBatchDelay();
     queue = new ArrayList<>(batchSize);
@@ -63,9 +64,7 @@ public class Sender implements Handler<List<SingleMetric>> {
   }
 
   private void init() {
-    HttpClientOptions httpClientOptions = new HttpClientOptions().setDefaultHost(vertxHawkularOptions.getHost())
-      .setDefaultPort(vertxHawkularOptions.getPort()).setKeepAlive(true).setTryUseCompression(true);
-    httpClient = vertx.createHttpClient(httpClientOptions);
+    httpClient = vertx.createHttpClient(vertxHawkularOptions.getHttpOptions());
     timerId = vertx.setPeriodic(MILLISECONDS.convert(batchDelay, SECONDS), this::flushIfIdle);
     sendTime = System.nanoTime();
   }
@@ -105,6 +104,7 @@ public class Sender implements Handler<List<SingleMetric>> {
       });
     req.putHeader("Content-Length", String.valueOf(buffer.length()));
     req.putHeader("Content-Type", "application/json");
+    req.putHeader("Hawkular-Tenant", tenant);
     req.exceptionHandler(err -> LOG.trace("Could not send metrics", err));
     req.write(buffer);
     req.end();
