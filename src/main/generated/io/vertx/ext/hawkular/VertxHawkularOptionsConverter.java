@@ -20,7 +20,7 @@ import io.vertx.core.json.JsonObject;
 
 /**
  * Converter for {@link io.vertx.ext.hawkular.VertxHawkularOptions}.
- * <p>
+ *
  * NOTE: This class has been automatically generated from the {@link io.vertx.ext.hawkular.VertxHawkularOptions} original class using Vert.x codegen.
  */
 public class VertxHawkularOptionsConverter {
