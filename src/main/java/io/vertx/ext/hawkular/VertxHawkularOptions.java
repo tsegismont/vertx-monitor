@@ -22,7 +22,7 @@ import io.vertx.core.metrics.MetricsOptions;
 /**
  * @author Thomas Segismont
  */
-@DataObject(generateConverter = true)
+@DataObject(generateConverter = true, inheritConverter = true)
 public class VertxHawkularOptions extends MetricsOptions {
   public static final String DEFAULT_HOST = "localhost";
   public static final int DEFAULT_PORT = 8080;
@@ -62,7 +62,7 @@ public class VertxHawkularOptions extends MetricsOptions {
   }
 
   public VertxHawkularOptions(JsonObject json) {
-    super(json);
+    this();
     VertxHawkularOptionsConverter.fromJson(json, this);
   }
 
