@@ -15,37 +15,35 @@
  */
 package io.vertx.ext.hawkular.impl;
 
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
-import io.vertx.ext.hawkular.VertxHawkularOptions;
 import org.hawkular.metrics.client.common.MetricType;
 import org.hawkular.metrics.client.common.SingleMetric;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 /**
  * @author Thomas Segismont
  */
-public class DatagramSocketMetricsImpl extends ScheduledMetrics implements DatagramSocketMetrics {
-  private final String baseName;
-
+public class DatagramSocketMetricsImpl implements DatagramSocketMetrics, Supplier<List<SingleMetric>> {
   // Bytes info
   private final AtomicLong bytesReceived = new AtomicLong(0);
   private final AtomicLong bytesSent = new AtomicLong(0);
   // Other
   private final AtomicLong errorCount = new AtomicLong(0);
 
+  private final String baseName;
+  private final Scheduler scheduler;
+
   private volatile String serverId;
 
-  public DatagramSocketMetricsImpl(Vertx vertx, VertxHawkularOptions vertxHawkularOptions,
-                                   Handler<List<SingleMetric>> metricHandler) {
-    super(vertx, vertxHawkularOptions, metricHandler);
-    String prefix = vertxHawkularOptions.getPrefix();
+  public DatagramSocketMetricsImpl(String prefix, Scheduler scheduler) {
     baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.datagram";
+    this.scheduler = scheduler;
+    scheduler.register(this);
   }
 
   @Override
@@ -70,7 +68,7 @@ public class DatagramSocketMetricsImpl extends ScheduledMetrics implements Datag
   }
 
   @Override
-  protected List<SingleMetric> collect() {
+  public List<SingleMetric> get() {
     long timestamp = System.currentTimeMillis();
     List<SingleMetric> metricList = new ArrayList<>(3);
     metricList.add(buildMetric("bytesSent", timestamp, bytesSent.get(), MetricType.COUNTER));
@@ -84,5 +82,15 @@ public class DatagramSocketMetricsImpl extends ScheduledMetrics implements Datag
 
   private SingleMetric buildMetric(String name, long timestamp, Number value, MetricType type) {
     return new SingleMetric(baseName + "." + name, timestamp, value.doubleValue(), type);
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return true;
+  }
+
+  @Override
+  public void close() {
+    scheduler.unregister(this);
   }
 }

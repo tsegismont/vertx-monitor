@@ -15,29 +15,25 @@
  */
 package io.vertx.ext.hawkular.impl;
 
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.ext.hawkular.VertxHawkularOptions;
 import org.hawkular.metrics.client.common.MetricType;
 import org.hawkular.metrics.client.common.SingleMetric;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import static java.util.concurrent.TimeUnit.*;
 
 /**
  * @author Thomas Segismont
  */
-public class HttpServerMetricsImpl extends ScheduledMetrics implements HttpServerMetrics<Long, Void, Void> {
-  private final String baseName;
-
+public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void>, Supplier<List<SingleMetric>> {
   // Request info
   private final AtomicLong processingTime = new AtomicLong(0);
   private final AtomicLong requestCount = new AtomicLong(0);
@@ -52,12 +48,14 @@ public class HttpServerMetricsImpl extends ScheduledMetrics implements HttpServe
   // Other
   private final AtomicLong errorCount = new AtomicLong(0);
 
-  public HttpServerMetricsImpl(Vertx vertx, VertxHawkularOptions vertxHawkularOptions, SocketAddress localAddress,
-                               Handler<List<SingleMetric>> metricHandler) {
-    super(vertx, vertxHawkularOptions, metricHandler);
+  private final String baseName;
+  private final Scheduler scheduler;
+
+  public HttpServerMetricsImpl(String prefix, SocketAddress localAddress, Scheduler scheduler) {
     String serverId = localAddress.host() + ":" + localAddress.port();
-    String prefix = vertxHawkularOptions.getPrefix();
     baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.http.server." + serverId;
+    this.scheduler = scheduler;
+    scheduler.register(this);
   }
 
   @Override
@@ -117,7 +115,7 @@ public class HttpServerMetricsImpl extends ScheduledMetrics implements HttpServe
   }
 
   @Override
-  protected List<SingleMetric> collect() {
+  public List<SingleMetric> get() {
     long timestamp = System.currentTimeMillis();
     return Arrays.asList(buildMetric("processingTime", timestamp, processingTime.get(), MetricType.COUNTER),
       buildMetric("requestCount", timestamp, requestCount.get(), MetricType.COUNTER),
@@ -131,5 +129,15 @@ public class HttpServerMetricsImpl extends ScheduledMetrics implements HttpServe
 
   private SingleMetric buildMetric(String name, long timestamp, Number value, MetricType type) {
     return new SingleMetric(baseName + "." + name, timestamp, value.doubleValue(), type);
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return true;
+  }
+
+  @Override
+  public void close() {
+    scheduler.unregister(this);
   }
 }

@@ -33,30 +33,33 @@ import io.vertx.ext.hawkular.VertxHawkularOptions;
  * @author Thomas Segismont
  */
 public class VertxMetricsImpl extends DummyVertxMetrics {
-  private final Vertx vertx;
-  private final VertxHawkularOptions vertxHawkularOptions;
-  private final Sender sender;
+  private final String prefix;
 
-  public VertxMetricsImpl(Vertx vertx, VertxHawkularOptions vertxHawkularOptions) {
-    this.vertx = vertx;
-    this.vertxHawkularOptions = vertxHawkularOptions;
-    sender = new Sender(vertx, vertxHawkularOptions);
+  private Sender sender;
+  private Scheduler scheduler;
+
+  public VertxMetricsImpl(Vertx vertx, VertxHawkularOptions options) {
+    prefix = options.getPrefix();
+    vertx.runOnContext(h -> {
+      sender = new Sender(vertx, options);
+      scheduler = new Scheduler(vertx, options, sender);
+    });
   }
 
   @Override
   public HttpServerMetrics<Long, Void, Void> createMetrics(HttpServer server, SocketAddress localAddress,
                                                            HttpServerOptions options) {
-    return new HttpServerMetricsImpl(vertx, vertxHawkularOptions, localAddress, sender);
+    return new HttpServerMetricsImpl(prefix, localAddress, scheduler);
   }
 
   @Override
   public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
-    return new NetServerMetricsImpl(vertx, vertxHawkularOptions, localAddress, sender);
+    return new NetServerMetricsImpl(prefix, localAddress, scheduler);
   }
 
   @Override
   public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
-    return new DatagramSocketMetricsImpl(vertx, vertxHawkularOptions, sender);
+    return new DatagramSocketMetricsImpl(prefix, scheduler);
   }
 
   @Override
@@ -71,6 +74,11 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
 
   @Override
   public void close() {
-    sender.stop();
+    if (scheduler != null) {
+      scheduler.stop();
+    }
+    if (sender != null) {
+      sender.stop();
+    }
   }
 }

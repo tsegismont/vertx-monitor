@@ -15,24 +15,20 @@
  */
 package io.vertx.ext.hawkular.impl;
 
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.ext.hawkular.VertxHawkularOptions;
 import org.hawkular.metrics.client.common.MetricType;
 import org.hawkular.metrics.client.common.SingleMetric;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 /**
  * @author Thomas Segismont
  */
-public class NetServerMetricsImpl extends ScheduledMetrics implements TCPMetrics<Void> {
-  private final String baseName;
-
+public class NetServerMetricsImpl implements TCPMetrics<Void>, Supplier<List<SingleMetric>> {
   // Connection info
   private final AtomicLong connections = new AtomicLong(0);
   // Bytes info
@@ -41,12 +37,14 @@ public class NetServerMetricsImpl extends ScheduledMetrics implements TCPMetrics
   // Other
   private final AtomicLong errorCount = new AtomicLong(0);
 
-  public NetServerMetricsImpl(Vertx vertx, VertxHawkularOptions vertxHawkularOptions, SocketAddress localAddress,
-                              Handler<List<SingleMetric>> metricHandler) {
-    super(vertx, vertxHawkularOptions, metricHandler);
+  private final String baseName;
+  private final Scheduler scheduler;
+
+  public NetServerMetricsImpl(String prefix, SocketAddress localAddress, Scheduler scheduler) {
     String serverId = localAddress.host() + ":" + localAddress.port();
-    String prefix = vertxHawkularOptions.getPrefix();
     baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.net.server." + serverId;
+    this.scheduler = scheduler;
+    scheduler.register(this);
   }
 
   @Override
@@ -76,7 +74,7 @@ public class NetServerMetricsImpl extends ScheduledMetrics implements TCPMetrics
   }
 
   @Override
-  protected List<SingleMetric> collect() {
+  public List<SingleMetric> get() {
     long timestamp = System.currentTimeMillis();
     return Arrays.asList(buildMetric("connections", timestamp, connections.get(), MetricType.GAUGE),
       buildMetric("bytesReceived", timestamp, bytesReceived.get(), MetricType.COUNTER),
@@ -86,5 +84,15 @@ public class NetServerMetricsImpl extends ScheduledMetrics implements TCPMetrics
 
   private SingleMetric buildMetric(String name, long timestamp, Number value, MetricType type) {
     return new SingleMetric(baseName + "." + name, timestamp, value.doubleValue(), type);
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return true;
+  }
+
+  @Override
+  public void close() {
+    scheduler.unregister(this);
   }
 }

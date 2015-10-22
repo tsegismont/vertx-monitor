@@ -15,7 +15,6 @@
  */
 package io.vertx.ext.hawkular.impl;
 
-import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -39,31 +38,23 @@ public class Sender implements Handler<List<SingleMetric>> {
   private static final Logger LOG = LoggerFactory.getLogger(Sender.class);
 
   private final Vertx vertx;
-  private final VertxHawkularOptions vertxHawkularOptions;
   private final String metricsURI;
   private final String tenant;
   private final int batchSize;
   private final long batchDelay;
   private final List<SingleMetric> queue;
-  private final Context context;
+  private final HttpClient httpClient;
+  private final long timerId;
 
-  private HttpClient httpClient;
-  private long timerId;
   private long sendTime;
 
   public Sender(Vertx vertx, VertxHawkularOptions vertxHawkularOptions) {
     this.vertx = vertx;
-    this.vertxHawkularOptions = vertxHawkularOptions;
     metricsURI = vertxHawkularOptions.getMetricsServiceUri() + "/gauges/data";
     tenant = vertxHawkularOptions.getTenant();
     batchSize = vertxHawkularOptions.getBatchSize();
     batchDelay = vertxHawkularOptions.getBatchDelay();
     queue = new ArrayList<>(batchSize);
-    context = vertx.getOrCreateContext();
-    context.runOnContext(v -> init());
-  }
-
-  private void init() {
     httpClient = vertx.createHttpClient(vertxHawkularOptions.getHttpOptions());
     timerId = vertx.setPeriodic(MILLISECONDS.convert(batchDelay, SECONDS), this::flushIfIdle);
     sendTime = System.nanoTime();
@@ -71,10 +62,6 @@ public class Sender implements Handler<List<SingleMetric>> {
 
   @Override
   public void handle(List<SingleMetric> metrics) {
-    context.runOnContext(v -> accept(metrics));
-  }
-
-  private void accept(List<SingleMetric> metrics) {
     if (queue.size() + metrics.size() < batchSize) {
       queue.addAll(metrics);
       return;
