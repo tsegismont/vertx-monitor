@@ -26,14 +26,13 @@ import org.hawkular.metrics.client.common.SingleMetric;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
 import static java.util.concurrent.TimeUnit.*;
 
 /**
  * @author Thomas Segismont
  */
-public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void>, Supplier<List<SingleMetric>> {
+public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void>, MetricSupplier {
   // Request info
   private final AtomicLong processingTime = new AtomicLong(0);
   private final AtomicLong requestCount = new AtomicLong(0);
@@ -115,7 +114,7 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
   }
 
   @Override
-  public List<SingleMetric> get() {
+  public List<SingleMetric> collect() {
     long timestamp = System.currentTimeMillis();
     return Arrays.asList(buildMetric("processingTime", timestamp, processingTime.get(), MetricType.COUNTER),
       buildMetric("requestCount", timestamp, requestCount.get(), MetricType.COUNTER),

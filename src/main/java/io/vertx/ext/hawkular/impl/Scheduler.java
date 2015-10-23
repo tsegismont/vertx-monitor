@@ -22,7 +22,6 @@ import org.hawkular.metrics.client.common.SingleMetric;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Supplier;
 
 import static java.util.concurrent.TimeUnit.*;
 
@@ -34,7 +33,7 @@ import static java.util.concurrent.TimeUnit.*;
 public class Scheduler {
   private final Vertx vertx;
   private final Handler<List<SingleMetric>> sender;
-  private final List<Supplier<List<SingleMetric>>> suppliers;
+  private final List<MetricSupplier> suppliers;
 
   private long timerId;
 
@@ -51,7 +50,7 @@ public class Scheduler {
   }
 
   private void collectAndSend(Long timerId) {
-    suppliers.forEach(supplier -> sender.handle(supplier.get()));
+    suppliers.forEach(supplier -> sender.handle(supplier.collect()));
   }
 
   /**
@@ -59,7 +58,7 @@ public class Scheduler {
    *
    * @param supplier an object supplying metrics to be collected
    */
-  public void register(Supplier<List<SingleMetric>> supplier) {
+  public void register(MetricSupplier supplier) {
     suppliers.add(supplier);
   }
 
@@ -68,7 +67,7 @@ public class Scheduler {
    *
    * @param supplier an object supplying metrics to be collected
    */
-  public void unregister(Supplier<List<SingleMetric>> supplier) {
+  public void unregister(MetricSupplier supplier) {
     suppliers.remove(supplier);
   }
 

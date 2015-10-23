@@ -23,12 +23,11 @@ import org.hawkular.metrics.client.common.SingleMetric;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
 /**
  * @author Thomas Segismont
  */
-public class DatagramSocketMetricsImpl implements DatagramSocketMetrics, Supplier<List<SingleMetric>> {
+public class DatagramSocketMetricsImpl implements DatagramSocketMetrics, MetricSupplier {
   // Bytes info
   private final AtomicLong bytesReceived = new AtomicLong(0);
   private final AtomicLong bytesSent = new AtomicLong(0);
@@ -68,7 +67,7 @@ public class DatagramSocketMetricsImpl implements DatagramSocketMetrics, Supplie
   }
 
   @Override
-  public List<SingleMetric> get() {
+  public List<SingleMetric> collect() {
     long timestamp = System.currentTimeMillis();
     List<SingleMetric> metricList = new ArrayList<>(3);
     metricList.add(buildMetric("bytesSent", timestamp, bytesSent.get(), MetricType.COUNTER));

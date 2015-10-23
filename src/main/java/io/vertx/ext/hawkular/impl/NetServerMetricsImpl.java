@@ -23,12 +23,11 @@ import org.hawkular.metrics.client.common.SingleMetric;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
 /**
  * @author Thomas Segismont
  */
-public class NetServerMetricsImpl implements TCPMetrics<Void>, Supplier<List<SingleMetric>> {
+public class NetServerMetricsImpl implements TCPMetrics<Void>, MetricSupplier {
   // Connection info
   private final AtomicLong connections = new AtomicLong(0);
   // Bytes info
@@ -74,7 +73,7 @@ public class NetServerMetricsImpl implements TCPMetrics<Void>, Supplier<List<Sin
   }
 
   @Override
-  public List<SingleMetric> get() {
+  public List<SingleMetric> collect() {
     long timestamp = System.currentTimeMillis();
     return Arrays.asList(buildMetric("connections", timestamp, connections.get(), MetricType.GAUGE),
       buildMetric("bytesReceived", timestamp, bytesReceived.get(), MetricType.COUNTER),
