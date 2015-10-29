@@ -18,9 +18,7 @@ package io.vertx.ext.hawkular
 
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
-import io.vertx.groovy.core.http.HttpServer
 import io.vertx.groovy.ext.unit.TestContext
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
@@ -40,24 +38,17 @@ class HttpServerITest extends BaseITest {
   def metricPrefix = "${METRIC_PREFIX}.vertx.http.server.${testHost}:${testPort}."
   def requestDelay = 120L
 
-  def HttpServer httpServer
-
   @Before
   void setup(TestContext context) {
-    def async = context.async()
-    httpServer = vertx.createHttpServer()
-    httpServer.requestHandler({ req ->
-      // Timer as artificial processing time
-      vertx.setTimer(requestDelay, { handler ->
-        req.response().setChunked(true).putHeader('Content-Type', 'text/plain').write(RESPONSE_CONTENT).end()
-      })
-    }).listen(testPort, testHost, { res ->
-      if (res.succeeded()) {
-        async.complete()
-      } else {
-        context.fail(res.cause())
-      }
-    })
+    def verticleName = 'verticles/http_server.groovy'
+    def instances = 1
+    def config = [
+      'host'        : testHost,
+      'port'        : testPort,
+      'requestDelay': requestDelay,
+      'content'     : RESPONSE_CONTENT
+    ]
+    deployVerticle(verticleName, config, instances, context)
   }
 
   @Test
@@ -94,17 +85,5 @@ class HttpServerITest extends BaseITest {
     assertGaugeEquals(RESPONSE_CONTENT.bytes.length, tenantId, "${metricPrefix}bytesSent")
     assertGaugeGreaterThan(requestDelay, tenantId, "${metricPrefix}processingTime")
     assertGaugeEquals(1, tenantId, "${metricPrefix}requestCount")
-  }
-
-  @After
-  void tearDown(TestContext context) {
-    def async = context.async()
-    httpServer.close({ res ->
-      if (res.succeeded()) {
-        async.complete()
-      } else {
-        context.fail(res.cause())
-      }
-    })
   }
 }
