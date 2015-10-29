@@ -17,70 +17,39 @@ package io.vertx.ext.hawkular.impl;
 
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
-import org.hawkular.metrics.client.common.MetricType;
-import org.hawkular.metrics.client.common.SingleMetric;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * Implementation of {@link DatagramSocketMetrics} which relays data to {@link DatagramSocketMetricsSupplier}.
+ *
  * @author Thomas Segismont
  */
-public class DatagramSocketMetricsImpl implements DatagramSocketMetrics, MetricSupplier {
-  // Bytes info
-  private final AtomicLong bytesReceived = new AtomicLong(0);
-  private final AtomicLong bytesSent = new AtomicLong(0);
-  // Other
-  private final AtomicLong errorCount = new AtomicLong(0);
+public class DatagramSocketMetricsImpl implements DatagramSocketMetrics {
+  private final DatagramSocketMetricsSupplier datagramSocketMetricsSupplier;
 
-  private final String baseName;
-  private final Scheduler scheduler;
+  private SocketAddress localAddress;
 
-  private volatile String serverId;
-
-  public DatagramSocketMetricsImpl(String prefix, Scheduler scheduler) {
-    baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.datagram";
-    this.scheduler = scheduler;
-    scheduler.register(this);
+  public DatagramSocketMetricsImpl(DatagramSocketMetricsSupplier datagramSocketMetricsSupplier) {
+    this.datagramSocketMetricsSupplier = datagramSocketMetricsSupplier;
   }
 
   @Override
   public void listening(SocketAddress localAddress) {
-    serverId = localAddress.host() + ":" + localAddress.port();
-    bytesReceived.set(0);
+    this.localAddress = localAddress;
   }
 
   @Override
   public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-    bytesReceived.addAndGet(numberOfBytes);
+    datagramSocketMetricsSupplier.incrementBytesReceived(localAddress, numberOfBytes);
   }
 
   @Override
   public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-    bytesSent.addAndGet(numberOfBytes);
+    datagramSocketMetricsSupplier.incrementBytesSent(remoteAddress, numberOfBytes);
   }
 
   @Override
   public void exceptionOccurred(Void socketMetric, SocketAddress remoteAddress, Throwable t) {
-    errorCount.incrementAndGet();
-  }
-
-  @Override
-  public List<SingleMetric> collect() {
-    long timestamp = System.currentTimeMillis();
-    List<SingleMetric> metricList = new ArrayList<>(3);
-    metricList.add(buildMetric("bytesSent", timestamp, bytesSent.get(), MetricType.COUNTER));
-    metricList.add(buildMetric("errorCount", timestamp, errorCount.get(), MetricType.COUNTER));
-    String sid = serverId;
-    if (sid != null) {
-      metricList.add(buildMetric(sid + ".bytesReceived", timestamp, bytesReceived.get(), MetricType.COUNTER));
-    }
-    return metricList;
-  }
-
-  private SingleMetric buildMetric(String name, long timestamp, Number value, MetricType type) {
-    return new SingleMetric(baseName + "." + name, timestamp, value.doubleValue(), type);
+    datagramSocketMetricsSupplier.incrementErrorCount();
   }
 
   @Override
@@ -90,6 +59,5 @@ public class DatagramSocketMetricsImpl implements DatagramSocketMetrics, MetricS
 
   @Override
   public void close() {
-    scheduler.unregister(this);
   }
 }

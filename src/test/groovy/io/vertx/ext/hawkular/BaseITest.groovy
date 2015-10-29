@@ -18,8 +18,11 @@ package io.vertx.ext.hawkular
 
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
+import io.vertx.core.AsyncResult
+import io.vertx.core.Handler
 import io.vertx.ext.unit.junit.Timeout
 import io.vertx.groovy.core.Vertx
+import io.vertx.groovy.core.datagram.DatagramSocket
 import io.vertx.groovy.ext.unit.TestContext
 import io.vertx.groovy.ext.unit.junit.VertxUnitRunner
 import org.junit.After
@@ -52,6 +55,13 @@ abstract class BaseITest {
   @BeforeClass
   static void setup() {
     hawkularMetrics = new RESTClient(SERVER_URL, ContentType.JSON)
+  }
+
+  protected def deployVerticle(String verticleName, Map config, int instances, TestContext testContext) {
+    vertx.deployVerticle(verticleName, [
+      'config'   : config,
+      'instances': instances
+    ], assertAsyncSuccess(testContext))
   }
 
   @After
@@ -93,7 +103,7 @@ abstract class BaseITest {
     }
   }
 
-  protected def static double getGaugeValue(String tenantId, String gauge) {
+  protected static def double getGaugeValue(String tenantId, String gauge) {
     while (true) {
       def data = hawkularMetrics.get([
         path   : "gauges/${gauge}/data",
@@ -109,6 +119,17 @@ abstract class BaseITest {
       double actual = getGaugeValue(tenantId, gauge)
       if (Double.compare(actual, expected) >= 0) return
       sleep(1000) // Maybe an old value? Give more time for metric to be collected
+    }
+  }
+
+  protected static def Handler<AsyncResult<DatagramSocket>> assertAsyncSuccess(TestContext context) {
+    def async = context.async()
+    return { res ->
+      if (res.succeeded()) {
+        async.complete()
+      } else {
+        context.fail()
+      }
     }
   }
 }

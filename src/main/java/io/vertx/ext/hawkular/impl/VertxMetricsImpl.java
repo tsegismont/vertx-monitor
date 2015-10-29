@@ -34,15 +34,18 @@ import io.vertx.ext.hawkular.VertxHawkularOptions;
  */
 public class VertxMetricsImpl extends DummyVertxMetrics {
   private final String prefix;
+  private final DatagramSocketMetricsSupplier datagramSocketMetricsSupplier;
 
   private Sender sender;
   private Scheduler scheduler;
 
   public VertxMetricsImpl(Vertx vertx, VertxHawkularOptions options) {
     prefix = options.getPrefix();
+    datagramSocketMetricsSupplier = new DatagramSocketMetricsSupplier(prefix);
     vertx.runOnContext(h -> {
       sender = new Sender(vertx, options);
       scheduler = new Scheduler(vertx, options, sender);
+      scheduler.register(datagramSocketMetricsSupplier);
     });
   }
 
@@ -59,7 +62,7 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
 
   @Override
   public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
-    return new DatagramSocketMetricsImpl(prefix, scheduler);
+    return new DatagramSocketMetricsImpl(datagramSocketMetricsSupplier);
   }
 
   @Override
@@ -74,6 +77,7 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
 
   @Override
   public void close() {
+    scheduler.unregister(datagramSocketMetricsSupplier);
     if (scheduler != null) {
       scheduler.stop();
     }
