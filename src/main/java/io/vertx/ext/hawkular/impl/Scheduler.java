@@ -15,6 +15,7 @@
  */
 package io.vertx.ext.hawkular.impl;
 
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.hawkular.VertxHawkularOptions;
@@ -40,13 +41,16 @@ public class Scheduler {
   /**
    * @param vertx   the {@link Vertx} managed instance
    * @param options Vertx Hawkular options
+   * @param context the metric collection and sending execution context
    * @param sender  the object responsible for sending metrics to the Hawkular server
    */
-  public Scheduler(Vertx vertx, VertxHawkularOptions options, Handler<List<SingleMetric>> sender) {
+  public Scheduler(Vertx vertx, VertxHawkularOptions options, Context context, Handler<List<SingleMetric>> sender) {
     this.vertx = vertx;
     this.sender = sender;
     suppliers = new CopyOnWriteArrayList<>();
-    timerId = vertx.setPeriodic(MILLISECONDS.convert(options.getSchedule(), SECONDS), this::collectAndSend);
+    context.runOnContext(aVoid -> {
+      timerId = vertx.setPeriodic(MILLISECONDS.convert(options.getSchedule(), SECONDS), this::collectAndSend);
+    });
   }
 
   private void collectAndSend(Long timerId) {

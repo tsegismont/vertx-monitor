@@ -15,9 +15,11 @@
  */
 package io.vertx.ext.hawkular.impl;
 
+import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
@@ -25,11 +27,14 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
+import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.ext.hawkular.VertxHawkularOptions;
 
 /**
+ * Metrcis SPI implementation.
+ *
  * @author Thomas Segismont
  */
 public class VertxMetricsImpl extends DummyVertxMetrics {
@@ -39,14 +44,17 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
   private Sender sender;
   private Scheduler scheduler;
 
+  /**
+   * @param vertx   the {@link Vertx} managed instance
+   * @param options Vertx Hawkular options
+   */
   public VertxMetricsImpl(Vertx vertx, VertxHawkularOptions options) {
     prefix = options.getPrefix();
     datagramSocketMetricsSupplier = new DatagramSocketMetricsSupplier(prefix);
-    vertx.runOnContext(h -> {
-      sender = new Sender(vertx, options);
-      scheduler = new Scheduler(vertx, options, sender);
-      scheduler.register(datagramSocketMetricsSupplier);
-    });
+    Context context = vertx.getOrCreateContext();
+    sender = new Sender(vertx, options, context);
+    scheduler = new Scheduler(vertx, options, context, sender);
+    scheduler.register(datagramSocketMetricsSupplier);
   }
 
   @Override
@@ -63,6 +71,11 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
   @Override
   public DatagramSocketMetrics createMetrics(DatagramSocket socket, DatagramSocketOptions options) {
     return new DatagramSocketMetricsImpl(datagramSocketMetricsSupplier);
+  }
+
+  @Override
+  public EventBusMetrics createMetrics(EventBus eventBus) {
+    return new EventBusMetricsImpl(prefix, scheduler);
   }
 
   @Override

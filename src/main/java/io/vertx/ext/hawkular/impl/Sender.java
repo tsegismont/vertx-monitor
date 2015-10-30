@@ -15,6 +15,7 @@
  */
 package io.vertx.ext.hawkular.impl;
 
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -32,6 +33,8 @@ import java.util.List;
 import static java.util.concurrent.TimeUnit.*;
 
 /**
+ * Sends collected metrics to the Hawkular server.
+ *
  * @author Thomas Segismont
  */
 public class Sender implements Handler<List<SingleMetric>> {
@@ -43,20 +46,28 @@ public class Sender implements Handler<List<SingleMetric>> {
   private final int batchSize;
   private final long batchDelay;
   private final List<SingleMetric> queue;
-  private final HttpClient httpClient;
-  private final long timerId;
+
+  private HttpClient httpClient;
+  private long timerId;
 
   private long sendTime;
 
-  public Sender(Vertx vertx, VertxHawkularOptions vertxHawkularOptions) {
+  /**
+   * @param vertx   the {@link Vertx} managed instance
+   * @param options Vertx Hawkular options
+   * @param context the metric collection and sending execution context
+   */
+  public Sender(Vertx vertx, VertxHawkularOptions options, Context context) {
     this.vertx = vertx;
-    metricsURI = vertxHawkularOptions.getMetricsServiceUri() + "/gauges/data";
-    tenant = vertxHawkularOptions.getTenant();
-    batchSize = vertxHawkularOptions.getBatchSize();
-    batchDelay = vertxHawkularOptions.getBatchDelay();
+    metricsURI = options.getMetricsServiceUri() + "/gauges/data";
+    tenant = options.getTenant();
+    batchSize = options.getBatchSize();
+    batchDelay = options.getBatchDelay();
     queue = new ArrayList<>(batchSize);
-    httpClient = vertx.createHttpClient(vertxHawkularOptions.getHttpOptions());
-    timerId = vertx.setPeriodic(MILLISECONDS.convert(batchDelay, SECONDS), this::flushIfIdle);
+    context.runOnContext(aVoid -> {
+      httpClient = vertx.createHttpClient(options.getHttpOptions());
+      timerId = vertx.setPeriodic(MILLISECONDS.convert(batchDelay, SECONDS), this::flushIfIdle);
+    });
     sendTime = System.nanoTime();
   }
 
