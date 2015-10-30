@@ -14,12 +14,13 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.ext.hawkular
+package io.vertx.ext.hawkular.impl
 
 import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
+import io.vertx.core.impl.VertxImpl
 import io.vertx.ext.unit.junit.Timeout
 import io.vertx.groovy.core.Vertx
 import io.vertx.groovy.core.datagram.DatagramSocket
@@ -31,6 +32,7 @@ import org.junit.Rule
 import org.junit.runner.RunWith
 
 import static java.util.concurrent.TimeUnit.MINUTES
+import static org.junit.Assert.fail
 
 @RunWith(VertxUnitRunner.class)
 abstract class BaseITest {
@@ -40,7 +42,7 @@ abstract class BaseITest {
   public static final SERVER_URL_PROPS = new URI(SERVER_URL)
   public static final TENANT_HEADER_NAME = "Hawkular-Tenant"
   public static final METRIC_PREFIX = 'mars01.host13'
-  public static final SCHEDULE = 1I
+  public static final SCHEDULE = 2I
   public static final DELTA = 0.001D
 
   protected static RESTClient hawkularMetrics
@@ -52,8 +54,10 @@ abstract class BaseITest {
   protected def vertxOptions = createMetricsOptions(tenantId)
   protected def vertx = Vertx.vertx(vertxOptions);
 
+  def metrics = (VertxMetricsImpl) ((VertxImpl) vertx.getDelegate()).getMetrics()
+
   @BeforeClass
-  static void setup() {
+  static void createRestClient() {
     hawkularMetrics = new RESTClient(SERVER_URL, ContentType.JSON)
   }
 
@@ -94,31 +98,26 @@ abstract class BaseITest {
   }
 
   protected static def void assertGaugeEquals(Double expected, String tenantId, String gauge) {
-    while (true) {
-      double actual = getGaugeValue(tenantId, gauge)
-      if (Double.compare(expected, actual) == 0 || Math.abs(expected - actual) <= DELTA) {
-        return
-      }
-      sleep(1000) // Maybe an old value? Give more time for metric to be collected
+    double actual = getGaugeValue(tenantId, gauge)
+    if (Double.compare(expected, actual) != 0 && Math.abs(expected - actual) > DELTA) {
+      fail("${gauge} expected: ${expected}, actual: ${actual}")
     }
   }
 
   protected static def double getGaugeValue(String tenantId, String gauge) {
-    while (true) {
-      def data = hawkularMetrics.get([
-        path   : "gauges/${gauge}/data",
-        headers: [(TENANT_HEADER_NAME): tenantId]
-      ]).data ?: []
-      if (!data.isEmpty()) return data[0].value as Double
-      sleep(1000) // Give more time for metric to be collected
-    }
+    def data = hawkularMetrics.get([
+      path   : "gauges/${gauge}/data",
+      headers: [(TENANT_HEADER_NAME): tenantId]
+    ]).data ?: []
+    if (!data.isEmpty()) return data[0].value as Double
+    fail("No data for ${gauge}")
+
   }
 
   protected static def void assertGaugeGreaterThan(Double expected, String tenantId, String gauge) {
-    while (true) {
-      double actual = getGaugeValue(tenantId, gauge)
-      if (Double.compare(actual, expected) >= 0) return
-      sleep(1000) // Maybe an old value? Give more time for metric to be collected
+    double actual = getGaugeValue(tenantId, gauge)
+    if (Double.compare(actual, expected) < 0) {
+      fail("Expected ${gauge} to be greather than ${expected}")
     }
   }
 
@@ -131,5 +130,9 @@ abstract class BaseITest {
         context.fail()
       }
     }
+  }
+
+  def waitServerReply() {
+    metrics.sender.waitServerReply()
   }
 }

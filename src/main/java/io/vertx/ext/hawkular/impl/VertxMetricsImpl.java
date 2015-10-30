@@ -98,4 +98,9 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
       sender.stop();
     }
   }
+
+  // Visible for testing
+  Sender getSender() {
+    return sender;
+  }
 }

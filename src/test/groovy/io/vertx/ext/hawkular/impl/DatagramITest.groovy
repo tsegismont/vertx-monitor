@@ -14,14 +14,14 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.ext.hawkular
+package io.vertx.ext.hawkular.impl
 
 import io.vertx.groovy.core.datagram.DatagramSocket
 import io.vertx.groovy.ext.unit.TestContext
 import org.junit.Before
 import org.junit.Test
 
-import static org.junit.Assert.assertTrue
+import static org.junit.Assert.assertEquals
 
 /**
  * @author Thomas Segismont
@@ -54,22 +54,19 @@ class DatagramITest extends BaseITest {
     def sentCount = 5
     sentCount.times { i -> client.send(CONTENT, testPort, testHost, assertAsyncSuccess(context)) }
 
-    def metrics
-    while (true) {
-      metrics = hawkularMetrics.get(path: 'metrics', headers: [(TENANT_HEADER_NAME): tenantId]).data ?: []
-      metrics = metrics.findAll { metric ->
-        String id = metric.id
-        id.startsWith(baseName)
-      }
-      if (!metrics.isEmpty() && DATAGRAM_METRICS.size() == metrics.size()) break;
-      sleep(1000) // Give some time for all metrics to be collected and sent
+    waitServerReply()
+
+    def metrics = hawkularMetrics.get(path: 'metrics', headers: [(TENANT_HEADER_NAME): tenantId]).data ?: []
+    metrics = metrics.findAll { metric ->
+      String id = metric.id
+      id.startsWith(baseName)
     }
     metrics = metrics.collect { metric ->
       String id = metric.id
       id.startsWith(baseNameWithAddress) ? id.substring(baseNameWithAddress.length()) : id.substring(baseName.length())
     }
 
-    assertTrue(DATAGRAM_METRICS.containsAll(metrics))
+    assertEquals(DATAGRAM_METRICS as Set, metrics as Set)
 
     assertGaugeEquals(sentCount * CONTENT.bytes.length, tenantId, "${baseNameWithAddress}bytesReceived")
     assertGaugeEquals(sentCount * CONTENT.bytes.length, tenantId, "${baseNameWithAddress}bytesSent")

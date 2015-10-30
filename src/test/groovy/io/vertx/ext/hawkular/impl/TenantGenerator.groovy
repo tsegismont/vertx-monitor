@@ -14,7 +14,7 @@
  *  You may elect to redistribute this code under either of these licenses.
  */
 
-package io.vertx.ext.hawkular
+package io.vertx.ext.hawkular.impl
 
 import java.util.concurrent.atomic.AtomicInteger
 

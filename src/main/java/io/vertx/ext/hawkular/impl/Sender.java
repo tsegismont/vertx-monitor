@@ -21,6 +21,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.hawkular.VertxHawkularOptions;
@@ -29,6 +30,8 @@ import org.hawkular.metrics.client.common.SingleMetric;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 
 import static java.util.concurrent.TimeUnit.*;
 
@@ -92,14 +95,7 @@ public class Sender implements Handler<List<SingleMetric>> {
   private void send(List<SingleMetric> metrics) {
     String json = Batcher.metricListToJson(metrics);
     Buffer buffer = Buffer.buffer(json);
-    HttpClientRequest req = httpClient.post(
-      metricsURI,
-      response -> {
-        if (response.statusCode() != 200 && LOG.isTraceEnabled()) {
-          response.bodyHandler(msg -> LOG.trace("Could not send metrics: " + response.statusCode() + " : "
-            + msg.toString()));
-        }
-      });
+    HttpClientRequest req = httpClient.post(metricsURI, this::onResponse);
     req.putHeader("Content-Length", String.valueOf(buffer.length()));
     req.putHeader("Content-Type", "application/json");
     req.putHeader("Hawkular-Tenant", tenant);
@@ -107,6 +103,19 @@ public class Sender implements Handler<List<SingleMetric>> {
     req.write(buffer);
     req.end();
     sendTime = System.nanoTime();
+  }
+
+  private void onResponse(HttpClientResponse response) {
+    if (response.statusCode() != 200 && LOG.isTraceEnabled()) {
+      response.bodyHandler(msg -> {
+        LOG.trace("Could not send metrics: " + response.statusCode() + " : " + msg.toString());
+      });
+    }
+    // Used for testing
+    CountDownLatch latch;
+    while ((latch = latches.poll()) != null) {
+      latch.countDown();
+    }
   }
 
   private void flushIfIdle(Long timerId) {
@@ -119,5 +128,14 @@ public class Sender implements Handler<List<SingleMetric>> {
   public void stop() {
     vertx.cancelTimer(timerId);
     httpClient.close();
+  }
+
+  final ConcurrentLinkedQueue<CountDownLatch> latches = new ConcurrentLinkedQueue<>();
+
+  // Visible for testing
+  void waitServerReply() throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(1);
+    latches.offer(latch);
+    latch.await();
   }
 }

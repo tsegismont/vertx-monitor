@@ -1,17 +1,16 @@
-package io.vertx.ext.hawkular
+package io.vertx.ext.hawkular.impl
 
 import io.vertx.groovy.ext.unit.TestContext
 import org.junit.Before
 import org.junit.Test
 
-import static org.junit.Assert.assertTrue
+import static org.junit.Assert.assertEquals
 
 /**
  * @author Thomas Segismont
  */
 class EventBusITest extends BaseITest {
-  static
-  final EVENT_BUS_METRICS = ['handlers', 'processingTime', 'errorCount', 'bytesWritten', 'bytesRead', 'pending',
+  static final EVENT_BUS_METRICS = ['handlers', 'processingTime', 'errorCount', 'bytesWritten', 'bytesRead', 'pending',
                              'pendingLocal', 'pendingRemote', 'publishedMessages', 'publishedLocalMessages',
                              'publishedRemoteMessages', 'sentMessages', 'sentLocalMessages', 'sentRemoteMessages',
                              'receivedMessages', 'receivedLocalMessages', 'receivedRemoteMessages', 'deliveredMessages',
@@ -38,22 +37,19 @@ class EventBusITest extends BaseITest {
     def publishedFail = 4
     publishedFail.times { i -> eventBus.publish(address, [fail: true, sleep: handlerSleep]) }
 
-    def metrics
-    while (true) {
-      metrics = hawkularMetrics.get(path: 'metrics', headers: [(TENANT_HEADER_NAME): tenantId]).data ?: []
-      metrics = metrics.findAll { metric ->
-        String id = metric.id
-        id.startsWith(baseName)
-      }
-      if (!metrics.isEmpty() && EVENT_BUS_METRICS.size() == metrics.size()) break;
-      sleep(1000) // Give some time for all metrics to be collected and sent
+    waitServerReply()
+
+    def metrics = hawkularMetrics.get(path: 'metrics', headers: [(TENANT_HEADER_NAME): tenantId]).data ?: []
+    metrics = metrics.findAll { metric ->
+      String id = metric.id
+      id.startsWith(baseName)
     }
     metrics = metrics.collect { metric ->
       String id = metric.id
       id.startsWith(baseNameWithAddress) ? id.substring(baseNameWithAddress.length()) : id.substring(baseName.length())
     }
 
-    assertTrue(EVENT_BUS_METRICS.containsAll(metrics))
+    assertEquals(EVENT_BUS_METRICS as Set, metrics as Set)
 
     def allPublished = publishedNofail + publishedFail
     assertGaugeEquals(instances, tenantId, "${baseName}handlers")
