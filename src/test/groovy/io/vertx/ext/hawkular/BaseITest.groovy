@@ -109,7 +109,7 @@ abstract class BaseITest {
         path   : "gauges/${gauge}/data",
         headers: [(TENANT_HEADER_NAME): tenantId]
       ]).data ?: []
-      if (!data.isEmpty()) return data[data.size() - 1].value as Double
+      if (!data.isEmpty()) return data[0].value as Double
       sleep(1000) // Give more time for metric to be collected
     }
   }
