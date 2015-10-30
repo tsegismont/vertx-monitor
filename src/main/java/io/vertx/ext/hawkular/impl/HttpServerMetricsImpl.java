@@ -26,6 +26,7 @@ import org.hawkular.metrics.client.common.SingleMetric;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 import static java.util.concurrent.TimeUnit.*;
 
@@ -34,18 +35,18 @@ import static java.util.concurrent.TimeUnit.*;
  */
 public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void>, MetricSupplier {
   // Request info
-  private final AtomicLong processingTime = new AtomicLong(0);
-  private final AtomicLong requestCount = new AtomicLong(0);
+  private final LongAdder processingTime = new LongAdder();
+  private final LongAdder requestCount = new LongAdder();
   private final AtomicLong requests = new AtomicLong(0);
   // HTTP Connection info
   private final AtomicLong httpConnections = new AtomicLong(0);
   // Websocket Connection info
   private final AtomicLong wsConnections = new AtomicLong(0);
   // Bytes info
-  private final AtomicLong bytesReceived = new AtomicLong(0);
-  private final AtomicLong bytesSent = new AtomicLong(0);
+  private final LongAdder bytesReceived = new LongAdder();
+  private final LongAdder bytesSent = new LongAdder();
   // Other
-  private final AtomicLong errorCount = new AtomicLong(0);
+  private final LongAdder errorCount = new LongAdder();
 
   private final String baseName;
   private final Scheduler scheduler;
@@ -66,8 +67,8 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
   @Override
   public void responseEnd(Long nanoStart, HttpServerResponse response) {
     long requestProcessingTime = System.nanoTime() - nanoStart;
-    requestCount.incrementAndGet();
-    processingTime.addAndGet(requestProcessingTime);
+    requestCount.increment();
+    processingTime.add(requestProcessingTime);
     requests.decrementAndGet();
   }
 
@@ -100,32 +101,32 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
 
   @Override
   public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-    bytesReceived.addAndGet(numberOfBytes);
+    bytesReceived.add(numberOfBytes);
   }
 
   @Override
   public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-    bytesSent.addAndGet(numberOfBytes);
+    bytesSent.add(numberOfBytes);
   }
 
   @Override
   public void exceptionOccurred(Void socketMetric, SocketAddress remoteAddress, Throwable t) {
-    errorCount.incrementAndGet();
+    errorCount.increment();
   }
 
   @Override
   public List<SingleMetric> collect() {
     long timestamp = System.currentTimeMillis();
-    long processingTimeMillis = MILLISECONDS.convert(processingTime.get(), NANOSECONDS);
+    long processingTimeMillis = MILLISECONDS.convert(processingTime.sum(), NANOSECONDS);
     return Arrays.asList(
       buildMetric("processingTime", timestamp, processingTimeMillis, MetricType.COUNTER),
-      buildMetric("requestCount", timestamp, requestCount.get(), MetricType.COUNTER),
+      buildMetric("requestCount", timestamp, requestCount.sum(), MetricType.COUNTER),
       buildMetric("requests", timestamp, requests.get(), MetricType.GAUGE),
       buildMetric("httpConnections", timestamp, httpConnections.get(), MetricType.GAUGE),
       buildMetric("wsConnections", timestamp, wsConnections.get(), MetricType.GAUGE),
-      buildMetric("bytesReceived", timestamp, bytesReceived.get(), MetricType.COUNTER),
-      buildMetric("bytesSent", timestamp, bytesSent.get(), MetricType.COUNTER),
-      buildMetric("errorCount", timestamp, errorCount.get(), MetricType.COUNTER));
+      buildMetric("bytesReceived", timestamp, bytesReceived.sum(), MetricType.COUNTER),
+      buildMetric("bytesSent", timestamp, bytesSent.sum(), MetricType.COUNTER),
+      buildMetric("errorCount", timestamp, errorCount.sum(), MetricType.COUNTER));
   }
 
   private SingleMetric buildMetric(String name, long timestamp, Number value, MetricType type) {
