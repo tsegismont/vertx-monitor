@@ -16,14 +16,11 @@
 
 package io.vertx.ext.hawkular
 
-import io.vertx.ext.unit.junit.Timeout
 import io.vertx.groovy.core.datagram.DatagramSocket
 import io.vertx.groovy.ext.unit.TestContext
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 
-import static java.util.concurrent.TimeUnit.MINUTES
 import static org.junit.Assert.assertTrue
 
 /**
@@ -39,9 +36,6 @@ class DatagramITest extends BaseITest {
   def baseNameWithAddress = "${baseName}${testHost}:${testPort}."
 
   def DatagramSocket client
-
-  @Rule
-  public Timeout timeout = new Timeout(1, MINUTES)
 
   @Before
   void setup(TestContext context) {
