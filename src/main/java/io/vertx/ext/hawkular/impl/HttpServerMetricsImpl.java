@@ -65,7 +65,7 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
 
   @Override
   public void responseEnd(Long nanoStart, HttpServerResponse response) {
-    long requestProcessingTime = MILLISECONDS.convert(System.nanoTime() - nanoStart, NANOSECONDS);
+    long requestProcessingTime = System.nanoTime() - nanoStart;
     requestCount.incrementAndGet();
     processingTime.addAndGet(requestProcessingTime);
     requests.decrementAndGet();
@@ -116,7 +116,9 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
   @Override
   public List<SingleMetric> collect() {
     long timestamp = System.currentTimeMillis();
-    return Arrays.asList(buildMetric("processingTime", timestamp, processingTime.get(), MetricType.COUNTER),
+    long processingTimeMillis = MILLISECONDS.convert(processingTime.get(), NANOSECONDS);
+    return Arrays.asList(
+      buildMetric("processingTime", timestamp, processingTimeMillis, MetricType.COUNTER),
       buildMetric("requestCount", timestamp, requestCount.get(), MetricType.COUNTER),
       buildMetric("requests", timestamp, requests.get(), MetricType.GAUGE),
       buildMetric("httpConnections", timestamp, httpConnections.get(), MetricType.GAUGE),
