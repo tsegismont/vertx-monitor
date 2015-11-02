@@ -22,6 +22,9 @@ import io.vertx.groovy.ext.unit.TestContext
 import org.junit.Before
 import org.junit.Test
 
+import java.util.concurrent.Callable
+import java.util.concurrent.ForkJoinPool
+
 import static org.junit.Assert.assertEquals
 
 /**
@@ -35,12 +38,12 @@ class HttpServerITest extends BaseITest {
   def testHost = '127.0.0.1'
   def testPort = getPort(9191)
   def metricPrefix = "${METRIC_PREFIX}.vertx.http.server.${testHost}:${testPort}."
-  def requestDelay = 120L
+  def requestDelay = 11L
 
   @Before
   void setup(TestContext context) {
     def verticleName = 'verticles/http_server.groovy'
-    def instances = 1
+    def instances = 4
     def config = [
       'host'        : testHost,
       'port'        : testPort,
@@ -55,10 +58,10 @@ class HttpServerITest extends BaseITest {
     waitServerReply()
 
     def metrics = hawkularMetrics.get(path: 'metrics', headers: [(TENANT_HEADER_NAME): tenantId]).data ?: []
-      metrics = metrics.findAll { metric ->
-        String id = metric.id
-        id.startsWith(metricPrefix)
-      }
+    metrics = metrics.findAll { metric ->
+      String id = metric.id
+      id.startsWith(metricPrefix)
+    }
     assertEquals(HTTP_SERVER_METRICS.size(), metrics.size())
 
     metrics = metrics.collect { metric ->
@@ -73,18 +76,28 @@ class HttpServerITest extends BaseITest {
   @Test
   void testHttpServerMetricsValues() {
     def bodyContent = 'pitchoune'
-    def httpClient = new RESTClient("http://${testHost}:${testPort}", ContentType.TEXT)
-    httpClient.post([
-      body: bodyContent
-    ], { res ->
-      assertEquals(200, res.status)
-    })
+    def sentCount = 68
+    (1..sentCount).collect { i ->
+      ForkJoinPool.commonPool().submit({
+        def httpClient = new RESTClient("http://${testHost}:${testPort}", ContentType.TEXT)
+        def status = 0I
+        httpClient.post([
+          body: bodyContent
+        ], { res ->
+          status = res.status
+        })
+        status
+      } as Callable<Integer>)
+    }.each { task ->
+      assertEquals(200, task.join())
+    }
 
     waitServerReply()
+    waitServerReply()
 
-    assertGaugeEquals(bodyContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
-    assertGaugeEquals(RESPONSE_CONTENT.bytes.length, tenantId, "${metricPrefix}bytesSent")
-    assertGaugeGreaterThan(requestDelay, tenantId, "${metricPrefix}processingTime")
-    assertGaugeEquals(1, tenantId, "${metricPrefix}requestCount")
+    assertGaugeEquals(sentCount * bodyContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
+    assertGaugeEquals(sentCount * RESPONSE_CONTENT.bytes.length, tenantId, "${metricPrefix}bytesSent")
+    assertGaugeGreaterThan(sentCount * requestDelay, tenantId, "${metricPrefix}processingTime")
+    assertGaugeEquals(sentCount, tenantId, "${metricPrefix}requestCount")
   }
 }

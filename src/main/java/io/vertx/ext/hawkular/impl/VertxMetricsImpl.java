@@ -39,6 +39,7 @@ import io.vertx.ext.hawkular.VertxHawkularOptions;
  */
 public class VertxMetricsImpl extends DummyVertxMetrics {
   private final String prefix;
+  private final HttpServerMetricsSupplier httpServerMetricsSupplier;
   private final DatagramSocketMetricsSupplier datagramSocketMetricsSupplier;
 
   private Sender sender;
@@ -50,17 +51,19 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
    */
   public VertxMetricsImpl(Vertx vertx, VertxHawkularOptions options) {
     prefix = options.getPrefix();
+    httpServerMetricsSupplier = new HttpServerMetricsSupplier(prefix);
     datagramSocketMetricsSupplier = new DatagramSocketMetricsSupplier(prefix);
     Context context = vertx.getOrCreateContext();
     sender = new Sender(vertx, options, context);
     scheduler = new Scheduler(vertx, options, context, sender);
+    scheduler.register(httpServerMetricsSupplier);
     scheduler.register(datagramSocketMetricsSupplier);
   }
 
   @Override
   public HttpServerMetrics<Long, Void, Void> createMetrics(HttpServer server, SocketAddress localAddress,
                                                            HttpServerOptions options) {
-    return new HttpServerMetricsImpl(prefix, localAddress, scheduler);
+    return new HttpServerMetricsImpl(localAddress, httpServerMetricsSupplier);
   }
 
   @Override
@@ -90,6 +93,7 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
 
   @Override
   public void close() {
+    scheduler.unregister(httpServerMetricsSupplier);
     scheduler.unregister(datagramSocketMetricsSupplier);
     if (scheduler != null) {
       scheduler.stop();

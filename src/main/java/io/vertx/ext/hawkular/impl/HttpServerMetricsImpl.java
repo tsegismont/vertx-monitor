@@ -20,20 +20,14 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
-import org.hawkular.metrics.client.common.MetricType;
-import org.hawkular.metrics.client.common.SingleMetric;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
-
-import static java.util.concurrent.TimeUnit.*;
 
 /**
  * @author Thomas Segismont
  */
-public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void>, MetricSupplier {
+public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void> {
   // Request info
   private final LongAdder processingTime = new LongAdder();
   private final LongAdder requestCount = new LongAdder();
@@ -48,14 +42,13 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
   // Other
   private final LongAdder errorCount = new LongAdder();
 
-  private final String baseName;
-  private final Scheduler scheduler;
+  private final SocketAddress localAddress;
+  private final HttpServerMetricsSupplier httpServerMetricsSupplier;
 
-  public HttpServerMetricsImpl(String prefix, SocketAddress localAddress, Scheduler scheduler) {
-    String serverId = localAddress.host() + ":" + localAddress.port();
-    baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.http.server." + serverId;
-    this.scheduler = scheduler;
-    scheduler.register(this);
+  public HttpServerMetricsImpl(SocketAddress localAddress, HttpServerMetricsSupplier httpServerMetricsSupplier) {
+    this.localAddress = localAddress;
+    this.httpServerMetricsSupplier = httpServerMetricsSupplier;
+    httpServerMetricsSupplier.register(this);
   }
 
   @Override
@@ -67,8 +60,8 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
   @Override
   public void responseEnd(Long nanoStart, HttpServerResponse response) {
     long requestProcessingTime = System.nanoTime() - nanoStart;
-    requestCount.increment();
     processingTime.add(requestProcessingTime);
+    requestCount.increment();
     requests.decrementAndGet();
   }
 
@@ -114,23 +107,67 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
     errorCount.increment();
   }
 
-  @Override
-  public List<SingleMetric> collect() {
-    long timestamp = System.currentTimeMillis();
-    long processingTimeMillis = MILLISECONDS.convert(processingTime.sum(), NANOSECONDS);
-    return Arrays.asList(
-      buildMetric("processingTime", timestamp, processingTimeMillis, MetricType.COUNTER),
-      buildMetric("requestCount", timestamp, requestCount.sum(), MetricType.COUNTER),
-      buildMetric("requests", timestamp, requests.get(), MetricType.GAUGE),
-      buildMetric("httpConnections", timestamp, httpConnections.get(), MetricType.GAUGE),
-      buildMetric("wsConnections", timestamp, wsConnections.get(), MetricType.GAUGE),
-      buildMetric("bytesReceived", timestamp, bytesReceived.sum(), MetricType.COUNTER),
-      buildMetric("bytesSent", timestamp, bytesSent.sum(), MetricType.COUNTER),
-      buildMetric("errorCount", timestamp, errorCount.sum(), MetricType.COUNTER));
+  /**
+   * @return the local {@link SocketAddress} of the {@link io.vertx.core.http.HttpServer}
+   */
+  public SocketAddress getServerAddress() {
+    return localAddress;
   }
 
-  private SingleMetric buildMetric(String name, long timestamp, Number value, MetricType type) {
-    return new SingleMetric(baseName + "." + name, timestamp, value.doubleValue(), type);
+  /**
+   * @return cumulated processing time of http requests
+   */
+  public Long getProcessingTime() {
+    return processingTime.sum();
+  }
+
+  /**
+   * @return total number of processed http requests
+   */
+  public Long getRequestCount() {
+    return requestCount.sum();
+  }
+
+  /**
+   * @return number of http requests currently processed
+   */
+  public Long getRequests() {
+    return requests.get();
+  }
+
+  /**
+   * @return number of http connections currently opened
+   */
+  public Long getHttpConnections() {
+    return httpConnections.get();
+  }
+
+  /**
+   * @return number of websocket connections currently opened
+   */
+  public Long getWsConnections() {
+    return wsConnections.get();
+  }
+
+  /**
+   * @return total number of bytes sent
+   */
+  public Long getBytesReceived() {
+    return bytesReceived.sum();
+  }
+
+  /**
+   * @return total number of bytes sent
+   */
+  public Long getBytesSent() {
+    return bytesSent.sum();
+  }
+
+  /**
+   * @return total number of errors
+   */
+  public Long getErrorCount() {
+    return errorCount.sum();
   }
 
   @Override
@@ -140,6 +177,6 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
 
   @Override
   public void close() {
-    scheduler.unregister(this);
+    httpServerMetricsSupplier.unregister(this);
   }
 }
