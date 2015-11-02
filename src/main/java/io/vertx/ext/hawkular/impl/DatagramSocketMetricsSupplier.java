@@ -21,11 +21,11 @@ import org.hawkular.metrics.client.common.MetricType;
 import org.hawkular.metrics.client.common.SingleMetric;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.LongAdder;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import static org.hawkular.metrics.client.common.MetricType.*;
 
@@ -36,61 +36,48 @@ import static org.hawkular.metrics.client.common.MetricType.*;
  */
 public class DatagramSocketMetricsSupplier implements MetricSupplier {
   private final String baseName;
-  private final ConcurrentMap<SocketAddress, Values> metrics;
-  private final LongAdder errors = new LongAdder();
+  private final Set<DatagramSocketMetricsImpl> metricsSet = new CopyOnWriteArraySet<>();
 
   public DatagramSocketMetricsSupplier(String prefix) {
     baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.datagram.";
-    metrics = new ConcurrentHashMap<>(0);
   }
 
   @Override
   public List<SingleMetric> collect() {
     long timestamp = System.currentTimeMillis();
-    List<SingleMetric> res = new ArrayList<>(1 + 2 * metrics.size());
-    res.add(new SingleMetric(baseName + "errorCount", timestamp, Long.valueOf(errors.sum()).doubleValue(), COUNTER));
-    metrics.entrySet().forEach(e -> {
-      SocketAddress address = e.getKey();
-      Values values = e.getValue();
-      res.addAll(values.toMetricList(timestamp, address));
+    Map<SocketAddress, Long> received = new HashMap<>();
+    Map<SocketAddress, Long> sent = new HashMap<>();
+    long errorCount = 0;
+    for (DatagramSocketMetricsImpl datagramSocketMetrics : metricsSet) {
+      SocketAddress serverAddress = datagramSocketMetrics.getServerAddress();
+      if (serverAddress != null) {
+        received.merge(serverAddress, datagramSocketMetrics.getBytesReceived(), Long::sum);
+      }
+      datagramSocketMetrics.getBytesSent().forEach((address, bytes) -> sent.merge(address, bytes, Long::sum));
+      errorCount += datagramSocketMetrics.getErrorCount();
+    }
+    List<SingleMetric> res = new ArrayList<>(received.size() + sent.size() + 1);
+    received.forEach((address, count) -> {
+      String addressId = address.host() + ":" + address.port();
+      res.add(metric(addressId + ".bytesReceived", timestamp, count, COUNTER));
     });
+    sent.forEach((address, count) -> {
+      String addressId = address.host() + ":" + address.port();
+      res.add(metric(addressId + ".bytesSent", timestamp, count, COUNTER));
+    });
+    res.add(new SingleMetric(baseName + "errorCount", timestamp, Long.valueOf(errorCount).doubleValue(), COUNTER));
     return res;
   }
 
-  public void incrementBytesReceived(SocketAddress address, long bytes) {
-    getValuesForAddress(address).received.add(bytes);
+  private SingleMetric metric(String name, long timestamp, Number value, MetricType type) {
+    return new SingleMetric(baseName + name, timestamp, value.doubleValue(), type);
   }
 
-  public void incrementBytesSent(SocketAddress address, long bytes) {
-    getValuesForAddress(address).sent.add(bytes);
+  public void register(DatagramSocketMetricsImpl datagramSocketMetrics) {
+    metricsSet.add(datagramSocketMetrics);
   }
 
-
-  public void incrementErrorCount() {
-    errors.increment();
-  }
-
-  private Values getValuesForAddress(SocketAddress address) {
-    return metrics.computeIfAbsent(address, a -> new Values(baseName));
-  }
-
-  private static class Values {
-    final String baseName;
-    final LongAdder received = new LongAdder();
-    final LongAdder sent = new LongAdder();
-
-    Values(String baseName) {
-      this.baseName = baseName;
-    }
-
-    List<SingleMetric> toMetricList(long timestamp, SocketAddress address) {
-      String addressId = address.host() + ":" + address.port();
-      return Arrays.asList(metric(addressId + ".bytesReceived", timestamp, received.sum(), COUNTER),
-        metric(addressId + ".bytesSent", timestamp, sent.sum(), COUNTER));
-    }
-
-    SingleMetric metric(String name, long timestamp, Number value, MetricType type) {
-      return new SingleMetric(baseName + name, timestamp, value.doubleValue(), type);
-    }
+  public void unregister(DatagramSocketMetricsImpl datagramSocketMetrics) {
+    metricsSet.remove(datagramSocketMetrics);
   }
 }
