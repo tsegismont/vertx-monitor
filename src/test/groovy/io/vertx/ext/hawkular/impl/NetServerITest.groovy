@@ -54,7 +54,6 @@ class NetServerITest extends BaseITest {
     assertEquals(NET_SERVER_METRICS as Set, metrics as Set)
   }
 
-
   @Test
   void testNetServerMetricsValues(TestContext context) {
     def requestContent = 'pitchoune'
@@ -82,7 +81,6 @@ class NetServerITest extends BaseITest {
       async.await()
     }
 
-    waitServerReply()
     waitServerReply()
 
     assertGaugeEquals(sentCount * requestContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
