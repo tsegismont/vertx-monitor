@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -34,14 +33,14 @@ import java.util.concurrent.atomic.LongAdder;
 public class EventBusMetricsImpl implements EventBusMetrics<EventBusHandlerMetrics>, MetricSupplier {
   private final String baseName;
   private final Scheduler scheduler;
-  private final AtomicLong handlers = new AtomicLong(0);
+  private final LongAdder handlers = new LongAdder();
   private final ConcurrentMap<String, HandlersMeasurements> handlersMeasurements = new ConcurrentHashMap<>(0);
   private final LongAdder errorCount = new LongAdder();
   private final LongAdder bytesWritten = new LongAdder();
   private final LongAdder bytesRead = new LongAdder();
-  private final AtomicLong pending = new AtomicLong(0);
-  private final AtomicLong pendingLocal = new AtomicLong(0);
-  private final AtomicLong pendingRemote = new AtomicLong(0);
+  private final LongAdder pending = new LongAdder();
+  private final LongAdder pendingLocal = new LongAdder();
+  private final LongAdder pendingRemote = new LongAdder();
   private final LongAdder publishedMessages = new LongAdder();
   private final LongAdder publishedLocalMessages = new LongAdder();
   private final LongAdder publishedRemoteMessages = new LongAdder();
@@ -64,7 +63,7 @@ public class EventBusMetricsImpl implements EventBusMetrics<EventBusHandlerMetri
 
   @Override
   public EventBusHandlerMetrics handlerRegistered(String address, boolean replyHandler) {
-    handlers.incrementAndGet();
+    handlers.increment();
     EventBusHandlerMetrics handlerMetrics = new EventBusHandlerMetrics(address);
     while (true) {
       HandlersMeasurements current = handlersMeasurements.get(address);
@@ -85,7 +84,7 @@ public class EventBusMetricsImpl implements EventBusMetrics<EventBusHandlerMetri
 
   @Override
   public void handlerUnregistered(EventBusHandlerMetrics handlerMetrics) {
-    handlers.decrementAndGet();
+    handlers.decrement();
     String address = handlerMetrics.getAddress();
     while (true) {
       HandlersMeasurements current = handlersMeasurements.get(address);
@@ -104,11 +103,11 @@ public class EventBusMetricsImpl implements EventBusMetrics<EventBusHandlerMetri
 
   @Override
   public void beginHandleMessage(EventBusHandlerMetrics handlerMetrics, boolean local) {
-    pending.decrementAndGet();
+    pending.decrement();
     if (local) {
-      pendingLocal.decrementAndGet();
+      pendingLocal.decrement();
     } else {
-      pendingRemote.decrementAndGet();
+      pendingRemote.decrement();
     }
     handlerMetrics.resetTimer();
   }
@@ -146,14 +145,14 @@ public class EventBusMetricsImpl implements EventBusMetrics<EventBusHandlerMetri
 
   @Override
   public void messageReceived(String address, boolean publish, boolean local, int handlers) {
-    pending.addAndGet(handlers);
+    pending.add(handlers);
     receivedMessages.increment();
     if (local) {
       receivedLocalMessages.increment();
-      pendingLocal.addAndGet(handlers);
+      pendingLocal.add(handlers);
     } else {
       receivedRemoteMessages.increment();
-      pendingRemote.addAndGet(handlers);
+      pendingRemote.add(handlers);
     }
     if (handlers > 0) {
       deliveredMessages.increment();
@@ -184,7 +183,7 @@ public class EventBusMetricsImpl implements EventBusMetrics<EventBusHandlerMetri
   public List<SingleMetric> collect() {
     long timestamp = System.currentTimeMillis();
     List<SingleMetric> metrics = new ArrayList<>();
-    metrics.add(buildMetric("handlers", timestamp, handlers.get(), MetricType.GAUGE));
+    metrics.add(buildMetric("handlers", timestamp, handlers.sum(), MetricType.GAUGE));
     handlersMeasurements.entrySet().forEach(e -> {
       String address = e.getKey();
       HandlersMeasurements measurements = e.getValue();
@@ -194,9 +193,9 @@ public class EventBusMetricsImpl implements EventBusMetrics<EventBusHandlerMetri
     metrics.add(buildMetric("errorCount", timestamp, errorCount.sum(), MetricType.COUNTER));
     metrics.add(buildMetric("bytesWritten", timestamp, bytesWritten.sum(), MetricType.COUNTER));
     metrics.add(buildMetric("bytesRead", timestamp, bytesRead.sum(), MetricType.COUNTER));
-    metrics.add(buildMetric("pending", timestamp, pending.get(), MetricType.GAUGE));
-    metrics.add(buildMetric("pendingLocal", timestamp, pendingLocal.get(), MetricType.GAUGE));
-    metrics.add(buildMetric("pendingRemote", timestamp, pendingRemote.get(), MetricType.GAUGE));
+    metrics.add(buildMetric("pending", timestamp, pending.sum(), MetricType.GAUGE));
+    metrics.add(buildMetric("pendingLocal", timestamp, pendingLocal.sum(), MetricType.GAUGE));
+    metrics.add(buildMetric("pendingRemote", timestamp, pendingRemote.sum(), MetricType.GAUGE));
     metrics.add(buildMetric("publishedMessages", timestamp, publishedMessages.sum(), MetricType.COUNTER));
     metrics.add(buildMetric("publishedLocalMessages", timestamp, publishedLocalMessages.sum(), MetricType.COUNTER));
     metrics.add(buildMetric("publishedRemoteMessages", timestamp, publishedRemoteMessages.sum(), MetricType.COUNTER));

@@ -18,7 +18,6 @@ package io.vertx.ext.hawkular.impl;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -26,7 +25,7 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class NetServerMetricsImpl implements TCPMetrics<Void> {
   // Connection info
-  private final AtomicLong connections = new AtomicLong(0);
+  private final LongAdder connections = new LongAdder();
   // Bytes info
   private final LongAdder bytesReceived = new LongAdder();
   private final LongAdder bytesSent = new LongAdder();
@@ -44,13 +43,13 @@ public class NetServerMetricsImpl implements TCPMetrics<Void> {
 
   @Override
   public Void connected(SocketAddress remoteAddress) {
-    connections.incrementAndGet();
+    connections.increment();
     return null;
   }
 
   @Override
   public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
-    connections.decrementAndGet();
+    connections.decrement();
   }
 
   @Override
@@ -79,7 +78,7 @@ public class NetServerMetricsImpl implements TCPMetrics<Void> {
    * @return number of connections currently opened
    */
   public long getConnections() {
-    return connections.get();
+    return connections.sum();
   }
 
   /**

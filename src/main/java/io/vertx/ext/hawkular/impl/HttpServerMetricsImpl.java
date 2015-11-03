@@ -21,7 +21,6 @@ import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -31,11 +30,11 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
   // Request info
   private final LongAdder processingTime = new LongAdder();
   private final LongAdder requestCount = new LongAdder();
-  private final AtomicLong requests = new AtomicLong(0);
+  private final LongAdder requests = new LongAdder();
   // HTTP Connection info
-  private final AtomicLong httpConnections = new AtomicLong(0);
+  private final LongAdder httpConnections = new LongAdder();
   // Websocket Connection info
-  private final AtomicLong wsConnections = new AtomicLong(0);
+  private final LongAdder wsConnections = new LongAdder();
   // Bytes info
   private final LongAdder bytesReceived = new LongAdder();
   private final LongAdder bytesSent = new LongAdder();
@@ -53,7 +52,7 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
 
   @Override
   public Long requestBegin(Void socketMetric, HttpServerRequest request) {
-    requests.incrementAndGet();
+    requests.increment();
     return System.nanoTime();
   }
 
@@ -62,7 +61,7 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
     long requestProcessingTime = System.nanoTime() - nanoStart;
     processingTime.add(requestProcessingTime);
     requestCount.increment();
-    requests.decrementAndGet();
+    requests.decrement();
   }
 
   @Override
@@ -72,24 +71,24 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
 
   @Override
   public Void connected(Void socketMetric, ServerWebSocket serverWebSocket) {
-    wsConnections.incrementAndGet();
+    wsConnections.increment();
     return null;
   }
 
   @Override
   public void disconnected(Void serverWebSocketMetric) {
-    wsConnections.decrementAndGet();
+    wsConnections.decrement();
   }
 
   @Override
   public Void connected(SocketAddress remoteAddress) {
-    httpConnections.incrementAndGet();
+    httpConnections.increment();
     return null;
   }
 
   @Override
   public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
-    httpConnections.decrementAndGet();
+    httpConnections.decrement();
   }
 
   @Override
@@ -132,21 +131,21 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
    * @return number of http requests currently processed
    */
   public Long getRequests() {
-    return requests.get();
+    return requests.sum();
   }
 
   /**
    * @return number of http connections currently opened
    */
   public Long getHttpConnections() {
-    return httpConnections.get();
+    return httpConnections.sum();
   }
 
   /**
    * @return number of websocket connections currently opened
    */
   public Long getWsConnections() {
-    return wsConnections.get();
+    return wsConnections.sum();
   }
 
   /**
