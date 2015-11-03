@@ -23,7 +23,6 @@ import io.vertx.core.Handler
 import io.vertx.core.impl.VertxImpl
 import io.vertx.ext.unit.junit.Timeout
 import io.vertx.groovy.core.Vertx
-import io.vertx.groovy.core.datagram.DatagramSocket
 import io.vertx.groovy.ext.unit.TestContext
 import io.vertx.groovy.ext.unit.junit.VertxUnitRunner
 import org.junit.After
@@ -121,7 +120,7 @@ abstract class BaseITest {
     }
   }
 
-  protected static def Handler<AsyncResult<DatagramSocket>> assertAsyncSuccess(TestContext context) {
+  protected static def Handler<AsyncResult> assertAsyncSuccess(TestContext context) {
     def async = context.async()
     return { res ->
       if (res.succeeded()) {
