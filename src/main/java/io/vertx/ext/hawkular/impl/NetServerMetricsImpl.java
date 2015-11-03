@@ -17,18 +17,14 @@ package io.vertx.ext.hawkular.impl;
 
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.TCPMetrics;
-import org.hawkular.metrics.client.common.MetricType;
-import org.hawkular.metrics.client.common.SingleMetric;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
  * @author Thomas Segismont
  */
-public class NetServerMetricsImpl implements TCPMetrics<Void>, MetricSupplier {
+public class NetServerMetricsImpl implements TCPMetrics<Void> {
   // Connection info
   private final AtomicLong connections = new AtomicLong(0);
   // Bytes info
@@ -37,14 +33,13 @@ public class NetServerMetricsImpl implements TCPMetrics<Void>, MetricSupplier {
   // Other
   private final LongAdder errorCount = new LongAdder();
 
-  private final String baseName;
-  private final Scheduler scheduler;
+  private final SocketAddress localAddress;
+  private final NetServerMetricsSupplier netServerMetricsSupplier;
 
-  public NetServerMetricsImpl(String prefix, SocketAddress localAddress, Scheduler scheduler) {
-    String serverId = localAddress.host() + ":" + localAddress.port();
-    baseName = prefix + (prefix.isEmpty() ? "" : ".") + "vertx.net.server." + serverId;
-    this.scheduler = scheduler;
-    scheduler.register(this);
+  public NetServerMetricsImpl(SocketAddress localAddress, NetServerMetricsSupplier netServerMetricsSupplier) {
+    this.localAddress = localAddress;
+    this.netServerMetricsSupplier = netServerMetricsSupplier;
+    netServerMetricsSupplier.register(this);
   }
 
   @Override
@@ -73,17 +68,39 @@ public class NetServerMetricsImpl implements TCPMetrics<Void>, MetricSupplier {
     errorCount.increment();
   }
 
-  @Override
-  public List<SingleMetric> collect() {
-    long timestamp = System.currentTimeMillis();
-    return Arrays.asList(buildMetric("connections", timestamp, connections.get(), MetricType.GAUGE),
-      buildMetric("bytesReceived", timestamp, bytesReceived.sum(), MetricType.COUNTER),
-      buildMetric("bytesSent", timestamp, bytesSent.sum(), MetricType.COUNTER),
-      buildMetric("errorCount", timestamp, errorCount.sum(), MetricType.COUNTER));
+  /**
+   * @return the local {@link SocketAddress} of the {@link io.vertx.core.net.NetServer}
+   */
+  public SocketAddress getServerAddress() {
+    return localAddress;
   }
 
-  private SingleMetric buildMetric(String name, long timestamp, Number value, MetricType type) {
-    return new SingleMetric(baseName + "." + name, timestamp, value.doubleValue(), type);
+  /**
+   * @return number of connections currently opened
+   */
+  public long getConnections() {
+    return connections.get();
+  }
+
+  /**
+   * @return total number of bytes received
+   */
+  public long getBytesReceived() {
+    return bytesReceived.sum();
+  }
+
+  /**
+   * @return total number of bytes sent
+   */
+  public long getBytesSent() {
+    return bytesSent.sum();
+  }
+
+  /**
+   * @return total number of errors
+   */
+  public long getErrorCount() {
+    return errorCount.sum();
   }
 
   @Override
@@ -93,6 +110,6 @@ public class NetServerMetricsImpl implements TCPMetrics<Void>, MetricSupplier {
 
   @Override
   public void close() {
-    scheduler.unregister(this);
+    netServerMetricsSupplier.unregister(this);
   }
 }
