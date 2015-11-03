@@ -150,7 +150,7 @@ public class HttpServerMetricsImpl implements HttpServerMetrics<Long, Void, Void
   }
 
   /**
-   * @return total number of bytes sent
+   * @return total number of bytes received
    */
   public Long getBytesReceived() {
     return bytesReceived.sum();
