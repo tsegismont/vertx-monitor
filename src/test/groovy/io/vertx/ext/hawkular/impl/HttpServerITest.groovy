@@ -16,14 +16,9 @@
 
 package io.vertx.ext.hawkular.impl
 
-import groovyx.net.http.ContentType
-import groovyx.net.http.RESTClient
 import io.vertx.groovy.ext.unit.TestContext
 import org.junit.Before
 import org.junit.Test
-
-import java.util.concurrent.Callable
-import java.util.concurrent.ForkJoinPool
 
 import static org.junit.Assert.assertEquals
 
@@ -62,27 +57,28 @@ class HttpServerITest extends BaseITest {
     assertEquals(HTTP_SERVER_METRICS as Set, metrics as Set)
   }
 
-
   @Test
-  void testHttpServerMetricsValues() {
+  void testHttpServerMetricsValues(TestContext context) {
     def bodyContent = 'pitchoune'
     def sentCount = 68
+    def httpClient = vertx.createHttpClient([defaultHost: testHost, defaultPort: testPort])
     (1..sentCount).collect { i ->
-      ForkJoinPool.commonPool().submit({
-        def httpClient = new RESTClient("http://${testHost}:${testPort}", ContentType.TEXT)
-        def status = 0I
-        httpClient.post([
-          body: bodyContent
-        ], { res ->
-          status = res.status
-        })
-        status
-      } as Callable<Integer>)
-    }.each { task ->
-      assertEquals(200, task.join())
+      def async = context.async()
+      httpClient.post("", { response ->
+        async.complete()
+        if (response.statusCode() != 200) {
+          context.fail(response.statusMessage())
+        }
+      }).exceptionHandler({ t ->
+        async.complete()
+        context.fail(t)
+      }).putHeader('Content-Length', bodyContent.bytes.length as String).write(bodyContent).end()
+      async
+    }.each { async ->
+      async.await()
     }
+    httpClient.close()
 
-    waitServerReply()
     waitServerReply()
 
     assertGaugeEquals(sentCount * bodyContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
