@@ -80,6 +80,7 @@ class NetServerITest extends BaseITest {
     }.each { async ->
       async.await()
     }
+    netClient.close()
 
     waitServerReply()
 
