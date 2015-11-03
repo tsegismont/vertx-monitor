@@ -79,8 +79,8 @@ public class HttpServerMetricsSupplier implements MetricSupplier {
     return res;
   }
 
-  private void merge(Map<SocketAddress, Long> processingTime, SocketAddress serverAddress, Long value) {
-    processingTime.merge(serverAddress, value, Long::sum);
+  private void merge(Map<SocketAddress, Long> values, SocketAddress serverAddress, Long value) {
+    values.merge(serverAddress, value, Long::sum);
   }
 
   private List<SingleMetric> metrics(String name, long timestamp, Map<SocketAddress, ? extends Number> values, MetricType type) {
