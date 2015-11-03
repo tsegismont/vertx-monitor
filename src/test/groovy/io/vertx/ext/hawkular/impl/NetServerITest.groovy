@@ -48,19 +48,9 @@ class NetServerITest extends BaseITest {
   @Test
   void shouldReportNetServerMetrics() {
     waitServerReply()
-
-    def metrics = hawkularMetrics.get(path: 'metrics', headers: [(TENANT_HEADER_NAME): tenantId]).data ?: []
-    metrics = metrics.findAll { metric ->
-      String id = metric.id
-      id.startsWith(metricPrefix)
-    }
-    assertEquals(NET_SERVER_METRICS.size(), metrics.size())
-
-    metrics = metrics.collect { metric ->
-      String id = metric.id
-      id.substring(metricPrefix.length())
-    }
-
+    def nameFilter = { String id -> id.startsWith(metricPrefix) }
+    def nameTransformer = { String id -> id.substring(metricPrefix.length()) }
+    def metrics = getMetrics(tenantId, nameFilter, nameTransformer)
     assertEquals(NET_SERVER_METRICS as Set, metrics as Set)
   }
 

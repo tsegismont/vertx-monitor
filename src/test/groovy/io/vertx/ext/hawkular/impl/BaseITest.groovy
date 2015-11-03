@@ -96,6 +96,17 @@ abstract class BaseITest {
     defaultValue + PORT_OFFSET
   }
 
+  protected static def List<String> getMetrics(String tenantId, Closure<Boolean> nameFilter,
+                                               Closure<String> nameTransformer) {
+    def metrics = hawkularMetrics.get(path: 'metrics', headers: [(TENANT_HEADER_NAME): tenantId]).data ?: []
+    metrics = metrics.findAll { metric ->
+      nameFilter.call(metric.id as String)
+    }.collect { metric ->
+      nameTransformer.call(metric.id as String)
+    }
+    metrics
+  }
+
   protected static def void assertGaugeEquals(Double expected, String tenantId, String gauge) {
     double actual = getGaugeValue(tenantId, gauge)
     if (Double.compare(expected, actual) != 0 && Math.abs(expected - actual) > DELTA) {

@@ -39,16 +39,11 @@ class EventBusITest extends BaseITest {
 
     waitServerReply()
 
-    def metrics = hawkularMetrics.get(path: 'metrics', headers: [(TENANT_HEADER_NAME): tenantId]).data ?: []
-    metrics = metrics.findAll { metric ->
-      String id = metric.id
-      id.startsWith(baseName)
-    }
-    metrics = metrics.collect { metric ->
-      String id = metric.id
+    def nameFilter = { String id -> id.startsWith(baseName) }
+    def nameTransformer = { String id ->
       id.startsWith(baseNameWithAddress) ? id.substring(baseNameWithAddress.length()) : id.substring(baseName.length())
     }
-
+    def metrics = getMetrics(tenantId, nameFilter, nameTransformer)
     assertEquals(EVENT_BUS_METRICS as Set, metrics as Set)
 
     def allPublished = publishedNofail + publishedFail
