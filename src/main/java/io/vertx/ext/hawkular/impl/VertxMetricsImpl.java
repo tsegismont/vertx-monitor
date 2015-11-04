@@ -23,6 +23,8 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
@@ -41,6 +43,7 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
   private final String prefix;
   private final HttpServerMetricsSupplier httpServerMetricsSupplier;
   private final NetServerMetricsSupplier netServerMetricsSupplier;
+  private final NetClientMetricsSupplier netClientMetricsSupplier;
   private final DatagramSocketMetricsSupplier datagramSocketMetricsSupplier;
 
   private Sender sender;
@@ -54,12 +57,14 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
     prefix = options.getPrefix();
     httpServerMetricsSupplier = new HttpServerMetricsSupplier(prefix);
     netServerMetricsSupplier = new NetServerMetricsSupplier(prefix);
+    netClientMetricsSupplier = new NetClientMetricsSupplier(prefix);
     datagramSocketMetricsSupplier = new DatagramSocketMetricsSupplier(prefix);
     Context context = vertx.getOrCreateContext();
     sender = new Sender(vertx, options, context);
     scheduler = new Scheduler(vertx, options, context, sender);
     scheduler.register(httpServerMetricsSupplier);
     scheduler.register(netServerMetricsSupplier);
+    scheduler.register(netClientMetricsSupplier);
     scheduler.register(datagramSocketMetricsSupplier);
   }
 
@@ -72,6 +77,11 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
   @Override
   public TCPMetrics createMetrics(NetServer server, SocketAddress localAddress, NetServerOptions options) {
     return new NetServerMetricsImpl(localAddress, netServerMetricsSupplier);
+  }
+
+  @Override
+  public TCPMetrics createMetrics(NetClient client, NetClientOptions options) {
+    return new NetClientMetricsImpl(netClientMetricsSupplier);
   }
 
   @Override
@@ -98,6 +108,7 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
   public void close() {
     scheduler.unregister(httpServerMetricsSupplier);
     scheduler.unregister(netServerMetricsSupplier);
+    scheduler.unregister(netClientMetricsSupplier);
     scheduler.unregister(datagramSocketMetricsSupplier);
     if (scheduler != null) {
       scheduler.stop();
