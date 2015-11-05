@@ -1,20 +1,21 @@
 = vertx-monitor
 :source-language: java
 
-= About
+== About
 
 Hawkular is an http://www.hawkular.org[open source monitoring and management solution].
 
-The http://vert-x3.github.io/docs/vertx-core/java/index.html#_metrics_spi[Vert.x Metrics SPI] allows implementers to
+The http://vertx.io/docs/vertx-core/java/index.html#_metrics_spi[Vert.x Metrics SPI] allows implementers to
 capture events from Vert.x in order to gather metrics.
 
 This project is an Hawkular implementation of the Vert.x Metrics SPI: metrics built from Vert.x events will be sent to
-an Hawkular Metrics server.
+an Hawkular Metrics service.
 
 == Quickstart
 
-First of all, you need an https://github.com/hawkular/hawkular-metrics[Hawkular Metrics server]. Follow the instructions
-on the project README or on http://www.hawkular.org/docs/user/getting-started.html[Hawkular's website].
+Follow the http://www.hawkular.org/docs/user/quick-start.html[instructions to get Hawkular up and running].
+
+NOTE: You can use a standalone https://github.com/hawkular/hawkular-metrics[Hawkular Metrics] server as well.
 
 Then clone this project and build it:
 [source, bash]
@@ -70,29 +71,34 @@ Vertx vertx = Vertx.vertx(vertxOptions); // <9>
 <1> `VertxHawkularOptions` extends `io.vertx.core.metrics.MetricsOptions`
 <2> Host of the Hawkular Metrics server, defaults to `localhost`
 <3> Port of the Hawkular Metrics server, defaults to `8080`
-<4> The Hawkular Metrics `tenant` (Hawkular Metrics standalone servers will accept any value), defaults to `default`
-<5> Metrics prefix used to build series name (for example `instance1.vertx.http.server.0.0.0.0:8080.bytesSent`), empty
+<4> The Hawkular `tenant`, defaults to `default`
+<5> Metrics prefix used to build series name (for example `marseille02.rack13.web043`), empty
 by default
-<6> How often (in seconds) metrics will be collected and sent to the Hawkular Metrics server, defaults to `1`
+<6> How often (in seconds) metrics will be collected and sent to the Hawkular server, defaults to `1` second
 <7> The *Vert.x Metrics SPI is disabled by default*, so make sure to enable it
 <8> Add your `VertxHawkularOptions` to the `io.vertx.core.VertxOptions`
 <9> Create the Vert.x instance
 
 == Limitations
 
-Currently, net/http/datagram server metrics are recorded. Event bus metrics are planned.
-
-Also, it's not yet possible to select the servers to be monitored, any http or net server created will have its metrics
-recorded (if the Vert.x Metrics SPI is enabled, of course).
+It's not possible yet to disable individual metrics.
 
 The collection interval is a global setting. In the future, it should be possible to assign a schedule for all metrics
 of a resource (net server, http server, event bus), or for a single metric.
 
 == Contributing
 
-Want to contribute? Great! Checkout the https://github.com/tsegismont/vertx-monitor/blob/master/TODO.md[TODO list] and
-join us in `#hawkular` on Freenode.
+Want to contribute? Great! Join us in http://webchat.freenode.net/?channels=hawkular[#vertx] or
+http://webchat.freenode.net/?channels=hawkular[#hawkular] rooms on Freenode.
 
 == License
 
-Apache License, version 2.0
+Source available under the terms of the Eclipse Public License v1.0 and Apache License v2.0.
+
+The Eclipse Public License is available at:
+http://www.eclipse.org/legal/epl-v10.html
+
+The Apache License v2.0 is available at:
+http://www.opensource.org/licenses/apache2.0.php
+
+You may elect to redistribute this code under either of these licenses.
