@@ -82,11 +82,12 @@ abstract class BaseITest {
   static def Map createMetricsOptions(String tenantId) {
     def vertxOptions = [
       metricsOptions: [
-        enabled    : true,
-        httpOptions: [defaultHost: SERVER_URL_PROPS.host, defaultPort: SERVER_URL_PROPS.port],
-        tenant     : tenantId,
-        prefix     : METRIC_PREFIX,
-        schedule   : SCHEDULE,
+        enabled : true,
+        host    : SERVER_URL_PROPS.host,
+        port    : SERVER_URL_PROPS.port,
+        tenant  : tenantId,
+        prefix  : METRIC_PREFIX,
+        schedule: SCHEDULE,
       ]
     ]
     vertxOptions

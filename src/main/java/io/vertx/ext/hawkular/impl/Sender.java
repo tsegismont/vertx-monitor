@@ -44,6 +44,8 @@ public class Sender implements Handler<List<SingleMetric>> {
   private static final Logger LOG = LoggerFactory.getLogger(Sender.class);
 
   private final Vertx vertx;
+  private final String host;
+  private final int port;
   private final String metricsURI;
   private final String tenant;
   private final int batchSize;
@@ -62,6 +64,8 @@ public class Sender implements Handler<List<SingleMetric>> {
    */
   public Sender(Vertx vertx, VertxHawkularOptions options, Context context) {
     this.vertx = vertx;
+    host = options.getHost();
+    port = options.getPort();
     metricsURI = options.getMetricsServiceUri() + "/gauges/data";
     tenant = options.getTenant();
     batchSize = options.getBatchSize();
@@ -95,7 +99,7 @@ public class Sender implements Handler<List<SingleMetric>> {
   private void send(List<SingleMetric> metrics) {
     String json = Batcher.metricListToJson(metrics);
     Buffer buffer = Buffer.buffer(json);
-    HttpClientRequest req = httpClient.post(metricsURI, this::onResponse);
+    HttpClientRequest req = httpClient.post(port, host, metricsURI, this::onResponse);
     req.putHeader("Content-Length", String.valueOf(buffer.length()));
     req.putHeader("Content-Type", "application/json");
     req.putHeader("Hawkular-Tenant", tenant);

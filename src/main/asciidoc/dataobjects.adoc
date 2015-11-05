@@ -21,6 +21,10 @@ Set the maximum delay between two consecutive batches (in seconds).
 Set the maximum number of metrics in a batch.
 +++
 |[[enabled]]`enabled`|`Boolean`|-
+|[[host]]`host`|`String`|
++++
+Set the Hawkular Metrics service host.
++++
 |[[httpOptions]]`httpOptions`|`link:dataobjects.html#HttpClientOptions[HttpClientOptions]`|
 +++
 Set the configuration of the Hawkular Metrics HTTP client.
@@ -28,6 +32,10 @@ Set the configuration of the Hawkular Metrics HTTP client.
 |[[metricsServiceUri]]`metricsServiceUri`|`String`|
 +++
 Set the Hawkular Metrics service URI.
++++
+|[[port]]`port`|`Number (int)`|
++++
+Set the Hawkular Metrics service port.
 +++
 |[[prefix]]`prefix`|`String`|
 +++

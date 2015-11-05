@@ -67,6 +67,8 @@ public class VertxHawkularOptions extends MetricsOptions {
    */
   public static final int DEFAULT_BATCH_DELAY = 1;
 
+  private String host;
+  private int port;
   private HttpClientOptions httpOptions;
   private String metricsServiceUri;
   private String tenant;
@@ -76,7 +78,9 @@ public class VertxHawkularOptions extends MetricsOptions {
   private int batchDelay;
 
   public VertxHawkularOptions() {
-    httpOptions = new HttpClientOptions().setDefaultHost(DEFAULT_HOST).setDefaultPort(DEFAULT_PORT);
+    host = DEFAULT_HOST;
+    port = DEFAULT_PORT;
+    httpOptions = new HttpClientOptions();
     metricsServiceUri = DEFAULT_METRICS_URI;
     tenant = DEFAULT_TENANT;
     schedule = DEFAULT_SCHEDULE;
@@ -87,6 +91,8 @@ public class VertxHawkularOptions extends MetricsOptions {
 
   public VertxHawkularOptions(VertxHawkularOptions other) {
     super(other);
+    host = other.host;
+    port = other.port;
     httpOptions = other.httpOptions;
     metricsServiceUri = other.metricsServiceUri;
     tenant = other.tenant;
@@ -99,6 +105,36 @@ public class VertxHawkularOptions extends MetricsOptions {
   public VertxHawkularOptions(JsonObject json) {
     this();
     VertxHawkularOptionsConverter.fromJson(json, this);
+  }
+
+  /**
+   * @return the Hawkular Metrics service host
+   */
+  public String getHost() {
+    return host;
+  }
+
+  /**
+   * Set the Hawkular Metrics service host.
+   */
+  public VertxHawkularOptions setHost(String host) {
+    this.host = host;
+    return this;
+  }
+
+  /**
+   * @return the Hawkular Metrics service port
+   */
+  public int getPort() {
+    return port;
+  }
+
+  /**
+   * Set the Hawkular Metrics service port.
+   */
+  public VertxHawkularOptions setPort(int port) {
+    this.port = port;
+    return this;
   }
 
   /**
@@ -172,7 +208,7 @@ public class VertxHawkularOptions extends MetricsOptions {
    * Set the metric name prefix.
    */
   public VertxHawkularOptions setPrefix(String prefix) {
-    this.prefix = prefix == null ? DEFAULT_PREFIX : prefix;
+    this.prefix = prefix;
     return this;
   }
 
