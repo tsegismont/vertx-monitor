@@ -13,6 +13,7 @@
  *
  *  You may elect to redistribute this code under either of these licenses.
  */
+
 package io.vertx.ext.hawkular.impl;
 
 import io.vertx.core.Context;
@@ -20,6 +21,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.metrics.impl.DummyVertxMetrics;
@@ -30,6 +33,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.DatagramSocketMetrics;
 import io.vertx.core.spi.metrics.EventBusMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.ext.hawkular.VertxHawkularOptions;
@@ -42,6 +46,7 @@ import io.vertx.ext.hawkular.VertxHawkularOptions;
 public class VertxMetricsImpl extends DummyVertxMetrics {
   private final String prefix;
   private final HttpServerMetricsSupplier httpServerMetricsSupplier;
+  private final HttpClientMetricsSupplier httpClientMetricsSupplier;
   private final NetServerMetricsSupplier netServerMetricsSupplier;
   private final NetClientMetricsSupplier netClientMetricsSupplier;
   private final DatagramSocketMetricsSupplier datagramSocketMetricsSupplier;
@@ -56,6 +61,7 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
   public VertxMetricsImpl(Vertx vertx, VertxHawkularOptions options) {
     prefix = options.getPrefix();
     httpServerMetricsSupplier = new HttpServerMetricsSupplier(prefix);
+    httpClientMetricsSupplier = new HttpClientMetricsSupplier(prefix);
     netServerMetricsSupplier = new NetServerMetricsSupplier(prefix);
     netClientMetricsSupplier = new NetClientMetricsSupplier(prefix);
     datagramSocketMetricsSupplier = new DatagramSocketMetricsSupplier(prefix);
@@ -63,6 +69,7 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
     sender = new Sender(vertx, options, context);
     scheduler = new Scheduler(vertx, options, context, sender);
     scheduler.register(httpServerMetricsSupplier);
+    scheduler.register(httpClientMetricsSupplier);
     scheduler.register(netServerMetricsSupplier);
     scheduler.register(netClientMetricsSupplier);
     scheduler.register(datagramSocketMetricsSupplier);
@@ -72,6 +79,11 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
   public HttpServerMetrics<Long, Void, Void> createMetrics(HttpServer server, SocketAddress localAddress,
                                                            HttpServerOptions options) {
     return new HttpServerMetricsImpl(localAddress, httpServerMetricsSupplier);
+  }
+
+  @Override
+  public HttpClientMetrics createMetrics(HttpClient client, HttpClientOptions options) {
+    return new HttpClientMetricsImpl(httpClientMetricsSupplier);
   }
 
   @Override
@@ -107,6 +119,7 @@ public class VertxMetricsImpl extends DummyVertxMetrics {
   @Override
   public void close() {
     scheduler.unregister(httpServerMetricsSupplier);
+    scheduler.unregister(httpClientMetricsSupplier);
     scheduler.unregister(netServerMetricsSupplier);
     scheduler.unregister(netClientMetricsSupplier);
     scheduler.unregister(datagramSocketMetricsSupplier);
