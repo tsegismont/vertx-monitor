@@ -54,7 +54,7 @@ class NetClientITest extends BaseITest {
   }
 
   @Test
-  void testNetServerMetricsValues(TestContext context) {
+  void testNetClientMetricsValues(TestContext context) {
     def requestContent = 'pitchoune'
     def sentCount = 68
 
