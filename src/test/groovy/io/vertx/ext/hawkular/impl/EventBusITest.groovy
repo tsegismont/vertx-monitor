@@ -20,8 +20,6 @@ import io.vertx.groovy.ext.unit.TestContext
 import org.junit.Before
 import org.junit.Test
 
-import static org.junit.Assert.assertEquals
-
 /**
  * @author Thomas Segismont
  */
@@ -53,14 +51,11 @@ class EventBusITest extends BaseITest {
     def publishedFail = 4
     publishedFail.times { i -> eventBus.publish(address, [fail: true, sleep: handlerSleep]) }
 
-    waitServerReply()
-
     def nameFilter = { String id -> id.startsWith(baseName) }
     def nameTransformer = { String id ->
       id.startsWith(baseNameWithAddress) ? id.substring(baseNameWithAddress.length()) : id.substring(baseName.length())
     }
-    def metrics = getMetrics(tenantId, nameFilter, nameTransformer)
-    assertEquals(EVENT_BUS_METRICS as Set, metrics as Set)
+    assertMetricsEquals(EVENT_BUS_METRICS as Set, tenantId, nameFilter, nameTransformer)
 
     def allPublished = publishedNofail + publishedFail
     assertGaugeEquals(instances, tenantId, "${baseName}handlers")

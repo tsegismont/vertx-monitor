@@ -20,7 +20,6 @@ import groovyx.net.http.ContentType
 import groovyx.net.http.RESTClient
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
-import io.vertx.core.impl.VertxImpl
 import io.vertx.ext.unit.junit.Timeout
 import io.vertx.groovy.core.Vertx
 import io.vertx.groovy.ext.unit.TestContext
@@ -30,7 +29,7 @@ import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.runner.RunWith
 
-import static java.util.concurrent.TimeUnit.MINUTES
+import static java.util.concurrent.TimeUnit.*
 import static org.junit.Assert.fail
 
 @RunWith(VertxUnitRunner.class)
@@ -52,8 +51,6 @@ abstract class BaseITest {
   protected def tenantId = TenantGenerator.instance.nextTenantId()
   protected def vertxOptions = createMetricsOptions(tenantId)
   protected def vertx = Vertx.vertx(vertxOptions);
-
-  def metrics = (VertxMetricsImpl) ((VertxImpl) vertx.getDelegate()).getMetrics()
 
   @BeforeClass
   static void createRestClient() {
@@ -97,39 +94,58 @@ abstract class BaseITest {
     defaultValue + PORT_OFFSET
   }
 
-  protected static def List<String> getMetrics(String tenantId, Closure<Boolean> nameFilter,
-                                               Closure<String> nameTransformer) {
-    def metrics = hawkularMetrics.get(path: 'metrics', headers: [(TENANT_HEADER_NAME): tenantId]).data ?: []
-    metrics = metrics.findAll { metric ->
-      nameFilter.call(metric.id as String)
-    }.collect { metric ->
-      nameTransformer.call(metric.id as String)
+  protected static def void assertMetricsEquals(Set expected, String tenantId, Closure<Boolean> nameFilter,
+                                                Closure<String> nameTransformer) {
+    long start = System.currentTimeMillis()
+    def actual
+    while (true) {
+      actual = hawkularMetrics.get(path: 'metrics', headers: [(TENANT_HEADER_NAME): tenantId]).data ?: []
+      actual = actual.findAll { metric ->
+        nameFilter.call(metric.id as String)
+      }.collect { metric ->
+        nameTransformer.call(metric.id as String)
+      } as Set
+      if (actual.equals(expected)) return;
+      if (System.currentTimeMillis() - start > MILLISECONDS.convert(2 * SCHEDULE, SECONDS)) break;
+      sleep(SCHEDULE / 10 as long)
     }
-    metrics
+    fail("Expected: ${expected}, actual: ${actual}")
   }
 
   protected static def void assertGaugeEquals(Double expected, String tenantId, String gauge) {
-    double actual = getGaugeValue(tenantId, gauge)
-    if (Double.compare(expected, actual) != 0 && Math.abs(expected - actual) > DELTA) {
-      fail("${gauge} expected: ${expected}, actual: ${actual}")
+    long start = System.currentTimeMillis()
+    def actual
+    while (true) {
+      actual = getGaugeValue(tenantId, gauge)
+      if (actual != null) {
+        if (Double.compare(expected, actual) == 0 || Math.abs(expected - actual) <= DELTA) return
+      }
+      if (System.currentTimeMillis() - start > MILLISECONDS.convert(2 * SCHEDULE, SECONDS)) break;
+      sleep(SCHEDULE / 10 as long)
     }
+    fail("Expected: ${expected}, actual: ${actual}")
   }
 
-  protected static def double getGaugeValue(String tenantId, String gauge) {
+  private static def Double getGaugeValue(String tenantId, String gauge) {
     def data = hawkularMetrics.get([
       path   : "gauges/${gauge}/data",
       headers: [(TENANT_HEADER_NAME): tenantId]
     ]).data ?: []
-    if (!data.isEmpty()) return data[0].value as Double
-    fail("No data for ${gauge}")
-
+    data.isEmpty() ? null : data[0].value as Double
   }
 
   protected static def void assertGaugeGreaterThan(Double expected, String tenantId, String gauge) {
-    double actual = getGaugeValue(tenantId, gauge)
-    if (Double.compare(actual, expected) < 0) {
-      fail("Expected ${gauge} value ${actual} to be greater than ${expected}")
+    long start = System.currentTimeMillis()
+    def actual
+    while (true) {
+      actual = getGaugeValue(tenantId, gauge)
+      if (actual != null) {
+        if (Double.compare(expected, actual) < 0) return
+      }
+      if (System.currentTimeMillis() - start > MILLISECONDS.convert(2 * SCHEDULE, SECONDS)) break;
+      sleep(SCHEDULE / 10 as long)
     }
+    fail("Expected ${gauge} value ${actual} to be greater than ${expected}")
   }
 
   protected static def Handler<AsyncResult> assertAsyncSuccess(TestContext context) {
@@ -141,9 +157,5 @@ abstract class BaseITest {
         context.fail()
       }
     }
-  }
-
-  def waitServerReply() {
-    metrics.sender.waitServerReply()
   }
 }

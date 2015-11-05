@@ -21,8 +21,6 @@ import io.vertx.groovy.ext.unit.TestContext
 import org.junit.Before
 import org.junit.Test
 
-import static org.junit.Assert.assertEquals
-
 /**
  * @author Thomas Segismont
  */
@@ -54,14 +52,11 @@ class DatagramITest extends BaseITest {
     def sentCount = 5
     sentCount.times { i -> client.send(CONTENT, testPort, testHost, assertAsyncSuccess(context)) }
 
-    waitServerReply()
-
     def nameFilter = { String id -> id.startsWith(baseName) }
     def nameTransformer = { String id ->
       id.startsWith(baseNameWithAddress) ? id.substring(baseNameWithAddress.length()) : id.substring(baseName.length())
     }
-    def metrics = getMetrics(tenantId, nameFilter, nameTransformer)
-    assertEquals(DATAGRAM_METRICS as Set, metrics as Set)
+    assertMetricsEquals(DATAGRAM_METRICS as Set, tenantId, nameFilter, nameTransformer)
 
     assertGaugeEquals(sentCount * CONTENT.bytes.length, tenantId, "${baseNameWithAddress}bytesReceived")
     assertGaugeEquals(sentCount * CONTENT.bytes.length, tenantId, "${baseNameWithAddress}bytesSent")

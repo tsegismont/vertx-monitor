@@ -69,8 +69,6 @@ class HttpClientITest extends BaseITest {
       })
     }
 
-    waitServerReply()
-
     assertGaugeEquals(concurrentClients * sentCount * requestContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
     assertGaugeEquals(concurrentClients * sentCount * RESPONSE_CONTENT.bytes.length, tenantId, "${metricPrefix}bytesSent")
     assertGaugeEquals(concurrentClients * sentCount, tenantId, "${metricPrefix}requestCount")

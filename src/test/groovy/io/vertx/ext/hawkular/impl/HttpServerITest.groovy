@@ -20,8 +20,6 @@ import io.vertx.groovy.ext.unit.TestContext
 import org.junit.Before
 import org.junit.Test
 
-import static org.junit.Assert.assertEquals
-
 /**
  * @author Thomas Segismont
  */
@@ -50,11 +48,9 @@ class HttpServerITest extends BaseITest {
 
   @Test
   void shouldReportHttpServerMetrics() {
-    waitServerReply()
     def nameFilter = { String id -> id.startsWith(metricPrefix) }
     def nameTransformer = { String id -> id.substring(metricPrefix.length()) }
-    def metrics = getMetrics(tenantId, nameFilter, nameTransformer)
-    assertEquals(HTTP_SERVER_METRICS as Set, metrics as Set)
+    assertMetricsEquals(HTTP_SERVER_METRICS as Set, tenantId, nameFilter, nameTransformer)
   }
 
   @Test
@@ -78,8 +74,6 @@ class HttpServerITest extends BaseITest {
       async.await()
     }
     httpClient.close()
-
-    waitServerReply()
 
     assertGaugeEquals(sentCount * bodyContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
     assertGaugeEquals(sentCount * RESPONSE_CONTENT.bytes.length, tenantId, "${metricPrefix}bytesSent")

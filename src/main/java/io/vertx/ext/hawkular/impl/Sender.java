@@ -30,8 +30,6 @@ import org.hawkular.metrics.client.common.SingleMetric;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
 
 import static java.util.concurrent.TimeUnit.*;
 
@@ -115,11 +113,6 @@ public class Sender implements Handler<List<SingleMetric>> {
         LOG.trace("Could not send metrics: " + response.statusCode() + " : " + msg.toString());
       });
     }
-    // Used for testing
-    CountDownLatch latch;
-    while ((latch = latches.poll()) != null) {
-      latch.countDown();
-    }
   }
 
   private void flushIfIdle(Long timerId) {
@@ -132,14 +125,5 @@ public class Sender implements Handler<List<SingleMetric>> {
   public void stop() {
     vertx.cancelTimer(timerId);
     httpClient.close();
-  }
-
-  final ConcurrentLinkedQueue<CountDownLatch> latches = new ConcurrentLinkedQueue<>();
-
-  // Visible for testing
-  void waitServerReply() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(1);
-    latches.offer(latch);
-    latch.await();
   }
 }

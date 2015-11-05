@@ -36,16 +36,16 @@ public class VertxHawkularOptionsConverter {
       obj.setEnabled((Boolean)json.getValue("enabled"));
     }
     if (json.getValue("host") instanceof String) {
-      obj.setHost((String) json.getValue("host"));
+      obj.setHost((String)json.getValue("host"));
     }
     if (json.getValue("httpOptions") instanceof JsonObject) {
       obj.setHttpOptions(new io.vertx.core.http.HttpClientOptions((JsonObject)json.getValue("httpOptions")));
     }
     if (json.getValue("metricsServiceUri") instanceof String) {
-      obj.setMetricsServiceUri((String) json.getValue("metricsServiceUri"));
+      obj.setMetricsServiceUri((String)json.getValue("metricsServiceUri"));
     }
     if (json.getValue("port") instanceof Number) {
-      obj.setPort(((Number) json.getValue("port")).intValue());
+      obj.setPort(((Number)json.getValue("port")).intValue());
     }
     if (json.getValue("prefix") instanceof String) {
       obj.setPrefix((String)json.getValue("prefix"));
