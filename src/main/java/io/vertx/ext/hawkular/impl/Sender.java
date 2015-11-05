@@ -67,11 +67,11 @@ public class Sender implements Handler<List<SingleMetric>> {
     metricsURI = options.getMetricsServiceUri() + "/gauges/data";
     tenant = options.getTenant();
     batchSize = options.getBatchSize();
-    batchDelay = options.getBatchDelay();
+    batchDelay = NANOSECONDS.convert(options.getBatchDelay(), SECONDS);
     queue = new ArrayList<>(batchSize);
     context.runOnContext(aVoid -> {
       httpClient = vertx.createHttpClient(options.getHttpOptions());
-      timerId = vertx.setPeriodic(MILLISECONDS.convert(batchDelay, SECONDS), this::flushIfIdle);
+      timerId = vertx.setPeriodic(MILLISECONDS.convert(batchDelay, NANOSECONDS), this::flushIfIdle);
     });
     sendTime = System.nanoTime();
   }
@@ -116,7 +116,7 @@ public class Sender implements Handler<List<SingleMetric>> {
   }
 
   private void flushIfIdle(Long timerId) {
-    if (System.nanoTime() - sendTime > NANOSECONDS.convert(batchDelay, SECONDS) && !queue.isEmpty()) {
+    if (System.nanoTime() - sendTime > batchDelay && !queue.isEmpty()) {
       send(queue);
       queue.clear();
     }
