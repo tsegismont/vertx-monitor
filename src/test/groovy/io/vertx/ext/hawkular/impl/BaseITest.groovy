@@ -127,7 +127,7 @@ abstract class BaseITest {
   protected static def void assertGaugeGreaterThan(Double expected, String tenantId, String gauge) {
     double actual = getGaugeValue(tenantId, gauge)
     if (Double.compare(actual, expected) < 0) {
-      fail("Expected ${gauge} to be greather than ${expected}")
+      fail("Expected ${gauge} value ${actual} to be greater than ${expected}")
     }
   }
 
