@@ -241,4 +241,15 @@ public class VertxHawkularOptions extends MetricsOptions {
     this.batchDelay = batchDelay;
     return this;
   }
+
+  @Override
+  public boolean isEnabled() {
+    return super.isEnabled();
+  }
+
+  @Override
+  public MetricsOptions setEnabled(boolean enable) {
+    super.setEnabled(enable);
+    return this;
+  }
 }

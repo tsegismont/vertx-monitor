@@ -17,6 +17,7 @@
 package io.vertx.ext.hawkular;
 
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.JsonArray;
 
 /**
  * Converter for {@link io.vertx.ext.hawkular.VertxHawkularOptions}.
