@@ -84,11 +84,12 @@ public class Sender implements Handler<List<SingleMetric>> {
 
           // source and value has to be set.
           // the timestamp can have been set in the message using the 'timestamp' field. If not use 'now'
-          // the type of metrics can have been set in the message using the 'type' field. It not use 'gauge'
+          // the type of metrics can have been set in the message using the 'type' field. It not use 'gauge'. Only
+          // "counter" and "gauge" are supported.
           SingleMetric metric = new SingleMetric(json.getString("source"),
               json.getLong("timestamp", System.currentTimeMillis()),
               json.getDouble("value"),
-              MetricType.from(json.getString("type", MetricType.GAUGE.name())));
+              "counter".equals(json.getString("type", "")) ? MetricType.COUNTER : MetricType.GAUGE);
 
           context.runOnContext(v -> handle(Collections.singletonList(metric)));
         });
