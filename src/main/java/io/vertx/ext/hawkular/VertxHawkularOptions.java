@@ -243,12 +243,7 @@ public class VertxHawkularOptions extends MetricsOptions {
   }
 
   @Override
-  public boolean isEnabled() {
-    return super.isEnabled();
-  }
-
-  @Override
-  public MetricsOptions setEnabled(boolean enable) {
+  public VertxHawkularOptions setEnabled(boolean enable) {
     super.setEnabled(enable);
     return this;
   }
