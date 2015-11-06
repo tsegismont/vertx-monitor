@@ -42,6 +42,12 @@ public class VertxHawkularOptionsConverter {
     if (json.getValue("httpOptions") instanceof JsonObject) {
       obj.setHttpOptions(new io.vertx.core.http.HttpClientOptions((JsonObject)json.getValue("httpOptions")));
     }
+    if (json.getValue("metricsBridgeAddress") instanceof String) {
+      obj.setMetricsBridgeAddress((String)json.getValue("metricsBridgeAddress"));
+    }
+    if (json.getValue("metricsBridgeEnabled") instanceof Boolean) {
+      obj.setMetricsBridgeEnabled((Boolean)json.getValue("metricsBridgeEnabled"));
+    }
     if (json.getValue("metricsServiceUri") instanceof String) {
       obj.setMetricsServiceUri((String)json.getValue("metricsServiceUri"));
     }
@@ -66,6 +72,10 @@ public class VertxHawkularOptionsConverter {
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }
+    if (obj.getMetricsBridgeAddress() != null) {
+      json.put("metricsBridgeAddress", obj.getMetricsBridgeAddress());
+    }
+    json.put("metricsBridgeEnabled", obj.isMetricsBridgeEnabled());
     if (obj.getMetricsServiceUri() != null) {
       json.put("metricsServiceUri", obj.getMetricsServiceUri());
     }

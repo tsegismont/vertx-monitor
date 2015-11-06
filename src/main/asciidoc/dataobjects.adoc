@@ -29,6 +29,18 @@ Set the Hawkular Metrics service host.
 +++
 Set the configuration of the Hawkular Metrics HTTP client.
 +++
+|[[metricsBridgeAddress]]`metricsBridgeAddress`|`String`|
++++
+Sets the metric bridge address on which the application is sending the custom metrics. Application can send
+ metrics to this event bus address. The message is a JSON object specifying at least the <code>source</code> and
+ <code>value</code> fields (<code>value</code> is a double).
+ <p/>
+ Don't forget to also enable the bridge with link.
++++
+|[[metricsBridgeEnabled]]`metricsBridgeEnabled`|`Boolean`|
++++
+Sets whether or not the metrics bridge should be enabled.
++++
 |[[metricsServiceUri]]`metricsServiceUri`|`String`|
 +++
 Set the Hawkular Metrics service URI.
