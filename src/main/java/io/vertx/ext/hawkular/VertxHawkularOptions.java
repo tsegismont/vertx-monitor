@@ -67,6 +67,17 @@ public class VertxHawkularOptions extends MetricsOptions {
    */
   public static final int DEFAULT_BATCH_DELAY = 1;
 
+  /**
+   * Default event bus address where applications can send business-related metrics. The metrics are sent as JSON
+   * message containing at least the <code>source</code> and <code>value</code> (double) fields.
+   */
+  public static final String DEFAULT_METRICS_BRIDGE_ADDRESS = "metrics";
+
+  /**
+   * The default value to enable / disable the metrics bridge. Disable by default.
+   */
+  public static final boolean DEFAULT_METRICS_BRIDGE_ENABLED = false;
+
   private String host;
   private int port;
   private HttpClientOptions httpOptions;
@@ -76,6 +87,8 @@ public class VertxHawkularOptions extends MetricsOptions {
   private String prefix;
   private int batchSize;
   private int batchDelay;
+  private boolean metricsBridgeEnabled;
+  private String metricsBridgeAddress;
 
   public VertxHawkularOptions() {
     host = DEFAULT_HOST;
@@ -87,6 +100,8 @@ public class VertxHawkularOptions extends MetricsOptions {
     prefix = DEFAULT_PREFIX;
     batchSize = DEFAULT_BATCH_SIZE;
     batchDelay = DEFAULT_BATCH_DELAY;
+    metricsBridgeEnabled = DEFAULT_METRICS_BRIDGE_ENABLED;
+    metricsBridgeAddress = DEFAULT_METRICS_BRIDGE_ADDRESS;
   }
 
   public VertxHawkularOptions(VertxHawkularOptions other) {
@@ -100,6 +115,8 @@ public class VertxHawkularOptions extends MetricsOptions {
     prefix = other.prefix;
     batchSize = other.batchSize;
     batchDelay = other.batchDelay;
+    metricsBridgeAddress = other.metricsBridgeAddress;
+    metricsBridgeEnabled = other.metricsBridgeEnabled;
   }
 
   public VertxHawkularOptions(JsonObject json) {
@@ -245,6 +262,50 @@ public class VertxHawkularOptions extends MetricsOptions {
   @Override
   public VertxHawkularOptions setEnabled(boolean enable) {
     super.setEnabled(enable);
+    return this;
+  }
+
+  /**
+   * @return the metric bridge address. If enabled the metric bridge transfers metrics collected from the event bus to
+   * the Hawkular server. The metrics are sent as message on the event bus to the return address. The message is a
+   * JSON object specifying at least the {@code source} and {@code value} fields ({@code value} is a double).
+   */
+  public String getMetricsBridgeAddress() {
+    return metricsBridgeAddress;
+  }
+
+  /**
+   * Sets the metric bridge address on which the application is sending the custom metrics. Application can send
+   * metrics to this event bus address. The message is a JSON object specifying at least the {@code source} and
+   * {@code value} fields ({@code value} is a double).
+   * <p/>
+   * Don't forget to also enable the bridge with {@link #setMetricsBridgeEnabled(boolean)}.
+   *
+   * @param metricsBridgeAddress the address
+   * @return the current {@link VertxHawkularOptions} instance
+   */
+  public VertxHawkularOptions setMetricsBridgeAddress(String metricsBridgeAddress) {
+    this.metricsBridgeAddress = metricsBridgeAddress;
+    return this;
+  }
+
+  /**
+   * Checks whether or not the metrics bridge is enabled.
+   *
+   * @return {@code true} if the metrics bridge is enabled, {@code false} otherwise.
+   */
+  public boolean isMetricsBridgeEnabled() {
+    return metricsBridgeEnabled;
+  }
+
+  /**
+   * Sets whether or not the metrics bridge should be enabled.
+   *
+   * @param metricsBridgeEnabled {@code true} to enable the bridge, {@code false} to disable it.
+   * @return the current {@link VertxHawkularOptions} instance
+   */
+  public VertxHawkularOptions setMetricsBridgeEnabled(boolean metricsBridgeEnabled) {
+    this.metricsBridgeEnabled = metricsBridgeEnabled;
     return this;
   }
 }

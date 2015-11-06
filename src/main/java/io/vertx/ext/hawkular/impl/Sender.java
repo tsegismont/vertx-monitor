@@ -22,13 +22,16 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.hawkular.VertxHawkularOptions;
 import org.hawkular.metrics.client.common.Batcher;
+import org.hawkular.metrics.client.common.MetricType;
 import org.hawkular.metrics.client.common.SingleMetric;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.concurrent.TimeUnit.*;
@@ -72,6 +75,24 @@ public class Sender implements Handler<List<SingleMetric>> {
     context.runOnContext(aVoid -> {
       httpClient = vertx.createHttpClient(options.getHttpOptions());
       timerId = vertx.setPeriodic(MILLISECONDS.convert(batchDelay, NANOSECONDS), this::flushIfIdle);
+
+      // Configure the metrics bridge. It just transforms the received metrics (json) to a Single Metric to enqueue it.
+      if (options.isMetricsBridgeEnabled() && options.getMetricsBridgeAddress() != null) {
+        vertx.eventBus().consumer(options.getMetricsBridgeAddress(), message -> {
+          // By spec, it is a json object.
+          JsonObject json = (JsonObject) message.body();
+
+          // source and value has to be set.
+          // the timestamp can have been set in the message using the 'timestamp' field. If not use 'now'
+          // the type of metrics can have been set in the message using the 'type' field. It not use 'gauge'
+          SingleMetric metric = new SingleMetric(json.getString("source"),
+              json.getLong("timestamp", System.currentTimeMillis()),
+              json.getDouble("value"),
+              MetricType.from(json.getString("type", MetricType.GAUGE.name())));
+
+          context.runOnContext(v -> handle(Collections.singletonList(metric)));
+        });
+      }
     });
     sendTime = System.nanoTime();
   }
