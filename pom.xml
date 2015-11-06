@@ -123,7 +123,7 @@
     <dependency>
       <groupId>org.hawkular.commons</groupId>
       <artifactId>hawkular-commons-embedded-cassandra-ear</artifactId>
-      <version>0.2.2.Final-SNAPSHOT</version>
+      <version>0.2.3.Final-SNAPSHOT</version>
       <type>ear</type>
       <scope>test</scope>
     </dependency>

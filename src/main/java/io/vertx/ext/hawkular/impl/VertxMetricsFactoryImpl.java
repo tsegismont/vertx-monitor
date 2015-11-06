@@ -37,4 +37,9 @@ public class VertxMetricsFactoryImpl implements VertxMetricsFactory {
     }
     return new VertxMetricsImpl(vertx, vertxHawkularOptions);
   }
+
+  @Override
+  public MetricsOptions newOptions() {
+    return new VertxHawkularOptions();
+  }
 }
