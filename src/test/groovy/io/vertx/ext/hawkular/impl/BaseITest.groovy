@@ -40,7 +40,7 @@ abstract class BaseITest {
   public static final SERVER_URL_PROPS = new URI(SERVER_URL)
   public static final TENANT_HEADER_NAME = "Hawkular-Tenant"
   public static final METRIC_PREFIX = 'mars01.host13'
-  public static final SCHEDULE = 2I
+  public static final SCHEDULE = MILLISECONDS.convert(2, SECONDS)
   public static final DELTA = 0.001D
 
   protected static RESTClient hawkularMetrics
@@ -84,7 +84,7 @@ abstract class BaseITest {
         port    : SERVER_URL_PROPS.port,
         tenant  : tenantId,
         prefix  : METRIC_PREFIX,
-        schedule: SCHEDULE,
+        schedule: SECONDS.convert(SCHEDULE, MILLISECONDS),
       ]
     ]
     vertxOptions
@@ -106,7 +106,7 @@ abstract class BaseITest {
         nameTransformer.call(metric.id as String)
       } as Set
       if (actual.equals(expected)) return;
-      if (System.currentTimeMillis() - start > MILLISECONDS.convert(2 * SCHEDULE, SECONDS)) break;
+      if (System.currentTimeMillis() - start > 2 * SCHEDULE) break;
       sleep(SCHEDULE / 10 as long)
     }
     fail("Expected: ${expected}, actual: ${actual}")
@@ -120,7 +120,7 @@ abstract class BaseITest {
       if (actual != null) {
         if (Double.compare(expected, actual) == 0 || Math.abs(expected - actual) <= DELTA) return
       }
-      if (System.currentTimeMillis() - start > MILLISECONDS.convert(2 * SCHEDULE, SECONDS)) break;
+      if (System.currentTimeMillis() - start > 2 * SCHEDULE) break;
       sleep(SCHEDULE / 10 as long)
     }
     fail("Expected: ${expected}, actual: ${actual}")
@@ -142,7 +142,7 @@ abstract class BaseITest {
       if (actual != null) {
         if (Double.compare(expected, actual) < 0) return
       }
-      if (System.currentTimeMillis() - start > MILLISECONDS.convert(2 * SCHEDULE, SECONDS)) break;
+      if (System.currentTimeMillis() - start > 2 * SCHEDULE) break;
       sleep(SCHEDULE / 10 as long)
     }
     fail("Expected ${gauge} value ${actual} to be greater than ${expected}")
