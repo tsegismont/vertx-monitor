@@ -78,7 +78,7 @@ class NetServerITest extends BaseITest {
     }
     netClient.close()
 
-    assertGaugeEquals(sentCount * requestContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
-    assertGaugeEquals(sentCount * RESPONSE_CONTENT.bytes.length, tenantId, "${metricPrefix}bytesSent")
+    assertCounterEquals(sentCount * requestContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
+    assertCounterEquals(sentCount * RESPONSE_CONTENT.bytes.length, tenantId, "${metricPrefix}bytesSent")
   }
 }

@@ -18,23 +18,25 @@ package io.vertx.ext.hawkular.impl;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.hawkular.VertxHawkularOptions;
-import org.hawkular.metrics.client.common.Batcher;
 import org.hawkular.metrics.client.common.MetricType;
 import org.hawkular.metrics.client.common.SingleMetric;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.concurrent.TimeUnit.*;
+import static java.util.stream.Collectors.*;
+import static org.hawkular.metrics.client.common.MetricType.*;
 
 /**
  * Sends collected metrics to the Hawkular server.
@@ -45,8 +47,6 @@ public class Sender implements Handler<List<SingleMetric>> {
   private static final Logger LOG = LoggerFactory.getLogger(Sender.class);
 
   private final Vertx vertx;
-  private final String host;
-  private final int port;
   private final String metricsURI;
   private final String tenant;
   private final int batchSize;
@@ -65,15 +65,16 @@ public class Sender implements Handler<List<SingleMetric>> {
    */
   public Sender(Vertx vertx, VertxHawkularOptions options, Context context) {
     this.vertx = vertx;
-    host = options.getHost();
-    port = options.getPort();
-    metricsURI = options.getMetricsServiceUri() + "/gauges/data";
+    metricsURI = options.getMetricsServiceUri() + "/metrics/data";
     tenant = options.getTenant();
     batchSize = options.getBatchSize();
     batchDelay = NANOSECONDS.convert(options.getBatchDelay(), SECONDS);
     queue = new ArrayList<>(batchSize);
     context.runOnContext(aVoid -> {
-      httpClient = vertx.createHttpClient(options.getHttpOptions());
+      HttpClientOptions httpClientOptions = options.getHttpOptions()
+        .setDefaultHost(options.getHost())
+        .setDefaultPort(options.getPort());
+      httpClient = vertx.createHttpClient(httpClientOptions);
       timerId = vertx.setPeriodic(MILLISECONDS.convert(batchDelay, NANOSECONDS), this::flushIfIdle);
 
       // Configure the metrics bridge. It just transforms the received metrics (json) to a Single Metric to enqueue it.
@@ -117,16 +118,54 @@ public class Sender implements Handler<List<SingleMetric>> {
   }
 
   private void send(List<SingleMetric> metrics) {
-    String json = Batcher.metricListToJson(metrics);
-    Buffer buffer = Buffer.buffer(json);
-    HttpClientRequest req = httpClient.post(port, host, metricsURI, this::onResponse);
-    req.putHeader("Content-Length", String.valueOf(buffer.length()));
-    req.putHeader("Content-Type", "application/json");
-    req.putHeader("Hawkular-Tenant", tenant);
-    req.exceptionHandler(err -> LOG.trace("Could not send metrics", err));
-    req.write(buffer);
-    req.end();
+    JsonObject mixedData = toHawkularMixedData(metrics);
+    httpClient.post(metricsURI, this::onResponse)
+      .putHeader("Content-Type", "application/json")
+      .putHeader("Hawkular-Tenant", tenant)
+      .exceptionHandler(err -> LOG.trace("Could not send metrics", err))
+      .end(mixedData.encode(), "UTF-8");
     sendTime = System.nanoTime();
+  }
+
+  private JsonObject toHawkularMixedData(List<SingleMetric> metrics) {
+    JsonObject mixedData = new JsonObject();
+    Map<MetricType, List<SingleMetric>> map = metrics.stream().collect(groupingBy(singleMetric -> {
+      // Hawkular only knows counters and gauges for now
+      if (singleMetric.getMetricType() == COUNTER) {
+        return COUNTER;
+      }
+      return GAUGE;
+    }));
+    List<SingleMetric> counterMetrics = map.get(COUNTER);
+    if (counterMetrics != null) {
+      // For now, gauges and counters are handled the same on the Vert.x side (Double value).
+      // But this is going to change
+      JsonArray counters = toHawkularGauges(counterMetrics);
+      mixedData.put("counters", counters);
+    }
+    List<SingleMetric> gaugeMetrics = map.get(GAUGE);
+    if (gaugeMetrics != null) {
+      JsonArray gauges = toHawkularGauges(gaugeMetrics);
+      mixedData.put("gauges", gauges);
+    }
+    return mixedData;
+  }
+
+  private JsonArray toHawkularGauges(List<SingleMetric> metrics) {
+    JsonArray gauges = new JsonArray();
+    metrics.forEach(singleMetric -> {
+
+      JsonObject point = new JsonObject();
+      point.put("timestamp", singleMetric.getTimestamp());
+      point.put("value", singleMetric.getValue());
+
+      JsonObject counter = new JsonObject();
+      counter.put("id", singleMetric.getSource());
+      counter.put("data", new JsonArray(Collections.singletonList(point)));
+
+      gauges.add(counter);
+    });
+    return gauges;
   }
 
   private void onResponse(HttpClientResponse response) {

@@ -58,8 +58,8 @@ class DatagramITest extends BaseITest {
     }
     assertMetricsEquals(DATAGRAM_METRICS as Set, tenantId, nameFilter, nameTransformer)
 
-    assertGaugeEquals(sentCount * CONTENT.bytes.length, tenantId, "${baseNameWithAddress}bytesReceived")
-    assertGaugeEquals(sentCount * CONTENT.bytes.length, tenantId, "${baseNameWithAddress}bytesSent")
-    assertGaugeEquals(0, tenantId, "${baseName}errorCount")
+    assertCounterEquals(sentCount * CONTENT.bytes.length, tenantId, "${baseNameWithAddress}bytesReceived")
+    assertCounterEquals(sentCount * CONTENT.bytes.length, tenantId, "${baseNameWithAddress}bytesSent")
+    assertCounterEquals(0, tenantId, "${baseName}errorCount")
   }
 }

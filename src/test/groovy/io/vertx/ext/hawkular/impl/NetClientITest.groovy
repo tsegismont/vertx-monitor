@@ -64,8 +64,8 @@ class NetClientITest extends BaseITest {
       })
     }
 
-    assertGaugeEquals(concurrentClients * sentCount * requestContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
-    assertGaugeEquals(concurrentClients * sentCount * RESPONSE_CONTENT.bytes.length, tenantId, "${metricPrefix}bytesSent")
+    assertCounterEquals(concurrentClients * sentCount * requestContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
+    assertCounterEquals(concurrentClients * sentCount * RESPONSE_CONTENT.bytes.length, tenantId, "${metricPrefix}bytesSent")
   }
 
   private void runClient(NetClient netClient, int sentCount, String requestContent, TestContext context) {

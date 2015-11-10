@@ -69,10 +69,10 @@ class HttpClientITest extends BaseITest {
       })
     }
 
-    assertGaugeEquals(concurrentClients * sentCount * requestContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
-    assertGaugeEquals(concurrentClients * sentCount * RESPONSE_CONTENT.bytes.length, tenantId, "${metricPrefix}bytesSent")
-    assertGaugeEquals(concurrentClients * sentCount, tenantId, "${metricPrefix}requestCount")
-    assertGaugeGreaterThan(concurrentClients * sentCount * requestDelay, tenantId, "${metricPrefix}responseTime")
+    assertCounterEquals(concurrentClients * sentCount * requestContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
+    assertCounterEquals(concurrentClients * sentCount * RESPONSE_CONTENT.bytes.length, tenantId, "${metricPrefix}bytesSent")
+    assertCounterEquals(concurrentClients * sentCount, tenantId, "${metricPrefix}requestCount")
+    assertCounterGreaterThan(concurrentClients * sentCount * requestDelay, tenantId, "${metricPrefix}responseTime")
   }
 
   private void runClient(HttpClient httpClient, int sentCount, String requestContent, TestContext context) {

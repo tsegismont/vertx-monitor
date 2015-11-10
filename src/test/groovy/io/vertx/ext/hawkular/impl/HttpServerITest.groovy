@@ -75,9 +75,9 @@ class HttpServerITest extends BaseITest {
     }
     httpClient.close()
 
-    assertGaugeEquals(sentCount * bodyContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
-    assertGaugeEquals(sentCount * RESPONSE_CONTENT.bytes.length, tenantId, "${metricPrefix}bytesSent")
-    assertGaugeGreaterThan(sentCount * requestDelay, tenantId, "${metricPrefix}processingTime")
-    assertGaugeEquals(sentCount, tenantId, "${metricPrefix}requestCount")
+    assertCounterEquals(sentCount * bodyContent.bytes.length, tenantId, "${metricPrefix}bytesReceived")
+    assertCounterEquals(sentCount * RESPONSE_CONTENT.bytes.length, tenantId, "${metricPrefix}bytesSent")
+    assertCounterGreaterThan(sentCount * requestDelay, tenantId, "${metricPrefix}processingTime")
+    assertCounterEquals(sentCount, tenantId, "${metricPrefix}requestCount")
   }
 }

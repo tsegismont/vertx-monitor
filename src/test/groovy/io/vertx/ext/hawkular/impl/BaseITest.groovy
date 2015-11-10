@@ -134,18 +134,38 @@ abstract class BaseITest {
     data.isEmpty() ? null : data[0].value as Double
   }
 
-  protected static def void assertGaugeGreaterThan(Double expected, String tenantId, String gauge) {
+  protected static def void assertCounterEquals(Long expected, String tenantId, String counter) {
     long start = System.currentTimeMillis()
     def actual
     while (true) {
-      actual = getGaugeValue(tenantId, gauge)
+      actual = getCounterValue(tenantId, counter)
+      if (expected.equals(actual)) return
+      if (System.currentTimeMillis() - start > 2 * SCHEDULE) break;
+      sleep(SCHEDULE / 10 as long)
+    }
+    fail("Expected: ${expected}, actual: ${actual}")
+  }
+
+  protected static def void assertCounterGreaterThan(Long expected, String tenantId, String counter) {
+    long start = System.currentTimeMillis()
+    def actual
+    while (true) {
+      actual = getCounterValue(tenantId, counter)
       if (actual != null) {
-        if (Double.compare(expected, actual) < 0) return
+        if (Long.compare(expected, actual) < 0) return
       }
       if (System.currentTimeMillis() - start > 2 * SCHEDULE) break;
       sleep(SCHEDULE / 10 as long)
     }
-    fail("Expected ${gauge} value ${actual} to be greater than ${expected}")
+    fail("Expected ${counter} value ${actual} to be greater than ${expected}")
+  }
+
+  private static def Long getCounterValue(String tenantId, String counter) {
+    def data = hawkularMetrics.get([
+      path   : "counters/${counter}/data",
+      headers: [(TENANT_HEADER_NAME): tenantId]
+    ]).data ?: []
+    data.isEmpty() ? null : data[0].value as Long
   }
 
   protected static def Handler<AsyncResult> assertAsyncSuccess(TestContext context) {
